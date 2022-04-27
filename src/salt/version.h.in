@@ -1,0 +1,7 @@
+#pragma once
+
+namespace salt {
+
+static char version[] = "@salt_VERSION_MAJOR@.@salt_VERSION_MINOR@" ;
+
+}
