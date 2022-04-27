@@ -4,16 +4,18 @@
 
 namespace salt {
 
-enum class DataReadResult {
-  kSuccess = 0,
-  kError = 1,
-  kDisconnect = 2,
+enum class data_read_result {
+  success = 0,
+  error = 1,
+  disconnect = 2,
 };
 
-class BasePacketAssemble {
- public:
-  virtual DataReadResult data_received(std::shared_ptr<ConnectionHandle> connection, std::string s) = 0;
-  virtual ~BasePacketAssemble() = default;
+class base_packet_assemble {
+public:
+  virtual data_read_result
+  data_received(std::shared_ptr<connection_handle> connection,
+                std::string s) = 0;
+  virtual ~base_packet_assemble() = default;
 };
 
-}  // namespace salt
+} // namespace salt

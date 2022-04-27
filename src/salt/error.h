@@ -4,13 +4,13 @@
 
 namespace salt {
 
-enum class ErrorCode {
-  kSuccess = 0,
-  kSendQueueFull,
-  kNullConnection,
+enum class error_code {
+  success = 0,
+  send_queue_full,
+  null_connection,
 };
 
-std::error_code make_error_code(ErrorCode ec);
-const std::error_category& error_category();
+std::error_code make_error_code(error_code ec);
+const std::error_category &error_category();
 
-}  // namespace salt
+} // namespace salt

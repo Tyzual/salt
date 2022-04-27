@@ -5,17 +5,19 @@
 
 namespace salt {
 
-class TcpConnectionHandle : public ConnectionHandle {
- public:
-  static std::shared_ptr<ConnectionHandle> create(std::shared_ptr<TcpConnection> connection);
-  void send(std::string data, std::function<void(const std::error_code&)> call_back) override;
-  ~TcpConnectionHandle() override = default;
+class tcp_connection_handle : public connection_handle {
+public:
+  static std::shared_ptr<connection_handle>
+  create(std::shared_ptr<tcp_connection> connection);
+  void send(std::string data,
+            std::function<void(const std::error_code &)> call_back) override;
+  ~tcp_connection_handle() override = default;
 
- private:
-  TcpConnectionHandle(std::shared_ptr<TcpConnection> connection);
+private:
+  tcp_connection_handle(std::shared_ptr<tcp_connection> connection);
 
- private:
-  std::shared_ptr<TcpConnection> connection_{nullptr};
+private:
+  std::shared_ptr<tcp_connection> connection_{nullptr};
 };
 
-}  // namespace salt
+} // namespace salt

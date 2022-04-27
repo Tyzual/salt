@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <functional>
@@ -7,10 +6,11 @@
 
 namespace salt {
 
-class ConnectionHandle {
- public:
-  virtual void send(std::string data, std::function<void(const std::error_code&)> call_back) = 0;
-  virtual ~ConnectionHandle() = default;
+class connection_handle {
+public:
+  virtual void send(std::string data,
+                    std::function<void(const std::error_code &)> call_back) = 0;
+  virtual ~connection_handle() = default;
 };
 
-}  // namespace salt
+} // namespace salt

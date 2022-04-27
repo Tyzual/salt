@@ -6,11 +6,8 @@ add_library(salt
             salt/error.h
             salt/log.h
             salt/packet_assemble.h
-            salt/salt.cpp
             salt/shared_asio_io_context_thread.cpp
             salt/shared_asio_io_context_thread.h
-            salt/tcp_client.cpp
-            salt/tcp_client.h
             salt/tcp_connection_handle.cpp
             salt/tcp_connection_handle.h
             salt/tcp_connection.cpp
