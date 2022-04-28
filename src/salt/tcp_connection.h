@@ -20,8 +20,9 @@ public:
 
   bool read();
 
-  void send(std::string data,
-            std::function<void(const std::error_code &)> call_back);
+  void
+  send(uint32_t seq, std::string data,
+       std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
 private:
   tcp_connection(asio::io_context &transfer_io_context,
@@ -32,8 +33,9 @@ private:
 
   void init() { receive_buffer_.resize(receive_buffer_max_size_); }
 
-  void _send(std::string data,
-             std::function<void(const std::error_code &)> call_back);
+  void
+  _send(uint32_t seq, std::string data,
+        std::function<void(uint32_t seq, const std::error_code &)> call_back);
   void disconnect();
 
 private:
@@ -41,7 +43,8 @@ private:
   asio::ip::tcp::socket socket_;
   uint32_t send_buffer_max_size_{256};
   std::deque<
-      std::pair<std::string, std::function<void(const std::error_code &)>>>
+      std::tuple<uint32_t /* seq */, std::string /* data */,
+                 std::function<void(uint32_t seq, const std::error_code &)>>>
       send_items_;
   uint32_t receive_buffer_max_size_{1024};
   std::string receive_buffer_;

@@ -9,8 +9,9 @@ class tcp_connection_handle : public connection_handle {
 public:
   static std::shared_ptr<connection_handle>
   create(std::shared_ptr<tcp_connection> connection);
-  void send(std::string data,
-            std::function<void(const std::error_code &)> call_back) override;
+  void send(uint32_t seq, std::string data,
+            std::function<void(uint32_t seq, const std::error_code &)>
+                call_back) override;
   ~tcp_connection_handle() override = default;
 
 private:
