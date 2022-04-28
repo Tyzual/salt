@@ -24,6 +24,8 @@ public:
   send(uint32_t seq, std::string data,
        std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
+  ~tcp_connection() { disconnect(); }
+
 private:
   tcp_connection(asio::io_context &transfer_io_context,
                  base_packet_assemble *packet_assemble)
@@ -50,7 +52,7 @@ private:
   std::string receive_buffer_;
   std::unique_ptr<base_packet_assemble> packet_assemble_{nullptr};
   asio::strand<asio::io_context::executor_type> strand_;
-  std::atomic_flag write_flag_;
+  std::atomic_flag write_flag_{false};
 };
 
 } // namespace salt

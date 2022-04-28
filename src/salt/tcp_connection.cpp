@@ -21,6 +21,13 @@ tcp_connection::create(asio::io_context &transfer_io_context,
 }
 
 void tcp_connection::disconnect() {
+  if (socket_.is_open()) {
+    log_debug("socket %s:%u disconnect from %s:%u",
+              socket_.local_endpoint().address().to_string().c_str(),
+              socket_.local_endpoint().port(),
+              socket_.remote_endpoint().address().to_string().c_str(),
+              socket_.remote_endpoint().port());
+  }
   socket_.close();
   send_items_.clear();
   receive_buffer_.clear();
@@ -89,12 +96,14 @@ bool tcp_connection::read() {
               this->socket_.remote_endpoint().address().to_string().c_str(),
               this->socket_.remote_endpoint().port(),
               err_code.message().c_str());
+          return;
         } else if (err_code) {
           log_error(
               "read data from %s:%u error, but remain %zu byte data, reason:%s",
               this->socket_.remote_endpoint().address().to_string().c_str(),
               this->socket_.remote_endpoint().port(), data_length,
               err_code.message().c_str());
+          return;
         }
         log_debug("receive %zu byte data", data_length);
         std::string data{this->receive_buffer_.begin(),
