@@ -1,3 +1,5 @@
+find_package(Threads)
+
 add_library(salt
             salt/asio_io_context_thread.cpp
             salt/asio_io_context_thread.h
@@ -22,3 +24,5 @@ target_include_directories(salt PUBLIC
                             "${CMAKE_CURRENT_SOURCE_DIR}"
                             "${CMAKE_SOURCE_DIR}/asio"
 )
+
+target_link_libraries(salt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
