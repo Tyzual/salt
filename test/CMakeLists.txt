@@ -1,5 +1,3 @@
-enable_testing()
-
 add_executable(
     tcp_client_test
     tcp_client_test.cpp
