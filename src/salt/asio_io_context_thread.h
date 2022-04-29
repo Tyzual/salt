@@ -5,7 +5,7 @@
 namespace salt {
 class asio_io_context_thread {
 public:
-  asio_io_context_thread();
+  asio_io_context_thread(bool run_in_current_thread = false);
   ~asio_io_context_thread();
 
   void stop();

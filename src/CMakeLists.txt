@@ -16,6 +16,8 @@ add_library(salt
             salt/tcp_connection.h
             salt/tcp_server.cpp
             salt/tcp_server.h
+            salt/tcp_client.cpp
+            salt/tcp_client.h
 )
 
 configure_file(salt/version.h.in salt/version.h)
