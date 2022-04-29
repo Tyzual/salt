@@ -15,6 +15,12 @@ std::string salt_error_category ::message(int ev) const {
   case error_code::success: {
     return "success";
   } break;
+  case error_code::parse_ip_address_error: {
+    return "parse ip address error";
+  } break;
+  case error_code::assemble_creator_not_set: {
+    return "packet assemble creator not set";
+  } break;
   case error_code::send_queue_full: {
     return "send queue is full";
   } break;
