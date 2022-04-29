@@ -8,7 +8,7 @@ public:
   std::string message(int ev) const override;
 };
 
-const char *salt_error_category ::name() const noexcept { return "tre_salt"; }
+const char *salt_error_category ::name() const noexcept { return "salt"; }
 
 std::string salt_error_category ::message(int ev) const {
   switch (static_cast<error_code>(ev)) {
