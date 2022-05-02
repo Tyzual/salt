@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 
-#include "salt/log.h"
 #include "salt/packet_assemble.h"
 #include "salt/tcp_client.h"
 #include "salt/version.h"
