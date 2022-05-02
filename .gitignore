@@ -2,5 +2,5 @@
 .vs/
 build/
 out/
-
+# clangd index cache
 .cache

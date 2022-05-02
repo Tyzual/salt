@@ -2,7 +2,6 @@
 
 #include "salt/error.h"
 #include "salt/log.h"
-#include <utility>
 
 namespace salt {
 
