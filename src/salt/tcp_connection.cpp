@@ -21,14 +21,19 @@ tcp_connection::create(asio::io_context &transfer_io_context,
 }
 
 void tcp_connection::disconnect() {
-  if (socket_.is_open()) {
-    log_debug("socket %s:%u disconnect from %s:%u",
-              socket_.local_endpoint().address().to_string().c_str(),
-              socket_.local_endpoint().port(),
-              socket_.remote_endpoint().address().to_string().c_str(),
-              socket_.remote_endpoint().port());
+  std::error_code error_code;
+  auto remote_endpoint = socket_.remote_endpoint(error_code);
+  if (!error_code) {
+    auto local_endpoint = socket_.local_endpoint(error_code);
+    if (!error_code) {
+      log_debug("socket %s:%u disconnect from %s:%u",
+                local_endpoint.address().to_string().c_str(),
+                local_endpoint.port(),
+                remote_endpoint.address().to_string().c_str(),
+                remote_endpoint.port());
+    }
   }
-  socket_.close();
+  socket_.close(error_code);
   send_items_.clear();
   receive_buffer_.clear();
   receive_buffer_.resize(receive_buffer_max_size_);

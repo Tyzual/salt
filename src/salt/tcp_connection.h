@@ -6,6 +6,8 @@
 #include <system_error>
 
 #include "asio.hpp"
+
+#include "salt/log.h"
 #include "salt/packet_assemble.h"
 
 namespace salt {
@@ -24,21 +26,27 @@ public:
   send(uint32_t seq, std::string data,
        std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
-  ~tcp_connection() { disconnect(); }
+  void disconnect();
+
+  ~tcp_connection() {
+    log_debug("~tcp_connection:%p", this);
+    disconnect();
+  }
 
 private:
   tcp_connection(asio::io_context &transfer_io_context,
                  base_packet_assemble *packet_assemble)
       : transfer_io_context_(transfer_io_context), socket_(transfer_io_context),
         packet_assemble_(packet_assemble),
-        strand_(asio::make_strand(transfer_io_context)) {}
+        strand_(asio::make_strand(transfer_io_context)) {
+    log_debug("create tcp_conection:%p", this);
+  }
 
   void init() { receive_buffer_.resize(receive_buffer_max_size_); }
 
   void
   _send(uint32_t seq, std::string data,
         std::function<void(uint32_t seq, const std::error_code &)> call_back);
-  void disconnect();
 
 private:
   asio::io_context &transfer_io_context_;

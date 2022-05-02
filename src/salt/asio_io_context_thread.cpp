@@ -2,22 +2,17 @@
 
 namespace salt {
 
-asio_io_context_thread::asio_io_context_thread(
-    bool run_in_current_thread /* = false */) {
-  if (run_in_current_thread) {
+asio_io_context_thread::asio_io_context_thread() { run(); }
+
+asio_io_context_thread::~asio_io_context_thread() { stop(); }
+
+void asio_io_context_thread::run() {
+  poll_thread_ = std::thread{[this]() {
     asio::executor_work_guard<asio::io_context::executor_type> work_guard(
         io_context_.get_executor());
     io_context_.run();
-  } else {
-    poll_thread_ = std::thread{[this]() {
-      asio::executor_work_guard<asio::io_context::executor_type> work_guard(
-          io_context_.get_executor());
-      io_context_.run();
-    }};
-  }
+  }};
 }
-
-asio_io_context_thread::~asio_io_context_thread() { stop(); }
 
 void asio_io_context_thread::stop() {
   io_context_.stop();
