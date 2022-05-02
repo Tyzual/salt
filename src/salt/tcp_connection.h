@@ -14,6 +14,7 @@ namespace salt {
 
 class tcp_connection : public std::enable_shared_from_this<tcp_connection> {
 public:
+  using call_back = std::function<void(uint32_t seq, const std::error_code &)>;
   static std::shared_ptr<tcp_connection>
   create(asio::io_context &transfer_io_context,
          base_packet_assemble *packet_assemble);

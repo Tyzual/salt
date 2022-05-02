@@ -2,3 +2,5 @@
 .vs/
 build/
 out/
+
+.cache

@@ -1,5 +1,7 @@
 #include <iostream>
+#include <string>
 
+#include "salt/log.h"
 #include "salt/packet_assemble.h"
 #include "salt/tcp_client.h"
 #include "salt/version.h"
@@ -14,9 +16,7 @@ public:
   salt::data_read_result
   data_received(std::shared_ptr<salt::connection_handle> connection,
                 std::string s) override {
-    static uint32_t seq = 0;
-    connection->send(++seq, std::move(s), send_call_back);
-
+    std::cout << "received data: " << s.c_str() << std::endl;
     return salt::data_read_result::success;
   }
 };
@@ -36,7 +36,19 @@ int main() {
     }
   });
 
-  std::cin.get();
+  while (true) {
+    std::string line;
+    std::getline(std::cin, line);
+    if (line == "quit") {
+      break;
+    }
+
+    client.broadcast(line, [](auto seq, auto error_code) {
+      std::cout << "send data seq:" << seq
+                << ", with error code:" << error_code.message() << std::endl;
+    });
+  }
+
   client.disconnect("127.0.0.1", 2002, [](const std::error_code &error_code) {
     if (error_code) {
       std::cout << "disconnect to 127.0.0.1:2002 error, reason:"

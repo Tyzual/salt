@@ -53,6 +53,8 @@ public:
   void set_assemble_creator(
       std::function<base_packet_assemble *(void)> assemble_creator);
 
+  void broadcast(std::string, tcp_connection::call_back);
+
   void stop();
 
 private:
