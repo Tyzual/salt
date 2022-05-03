@@ -15,7 +15,7 @@ option(INSTALL_GTEST "Enable installation of googletest." OFF)
 FetchContent_MakeAvailable(googletest)
 
 set(asio_header "${CMAKE_SOURCE_DIR}/asio/asio/include" CACHE STRING "asio header directory(directory that contain asio.hpp)")
-message("asio header dir ${asio_header}")
+message("asio header dir:${asio_header}")
 
 enable_testing()
 

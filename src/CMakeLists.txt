@@ -46,10 +46,8 @@ install(FILES
             salt/packet_assemble.h
             salt/shared_asio_io_context_thread.h
             salt/tcp_connection_handle.h
-            salt/tcp_connection.cpp
             salt/tcp_connection.h
             salt/tcp_server.h
-            salt/tcp_client.cpp
             salt/tcp_client.h
             DESTINATION include/salt
 )
