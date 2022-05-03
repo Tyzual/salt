@@ -16,6 +16,7 @@ target_compile_options(
 
 target_include_directories(
     tcp_client_test PRIVATE
+    "${asio_header}"
     "${PROJECT_BINARY_DIR}/src"
     "${PROJECT_SOURCE_DIR}/src"
 )
@@ -38,6 +39,7 @@ target_compile_options(
 
 target_include_directories(
     error_code_test PRIVATE
+    "${asio_header}"
     "${PROJECT_BINARY_DIR}/src"
     "${PROJECT_SOURCE_DIR}/src"
 )

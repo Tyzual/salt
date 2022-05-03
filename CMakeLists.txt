@@ -11,6 +11,7 @@ FetchContent_Declare(
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+option(INSTALL_GTEST "Enable installation of googletest." OFF)
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
@@ -19,6 +20,10 @@ add_subdirectory(src)
 add_subdirectory(example)
 add_subdirectory(test)
 
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+include(InstallRequiredSystemLibraries)
+set(CPACK_PROJECT_NAME "${PROJECT_NAME}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_VERSION_MAJOR "${salt_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${salt_VERSION_MINOR}")
+set(CPACK_SOURCE_GENERATOR "TGZ")
 include(CPack)

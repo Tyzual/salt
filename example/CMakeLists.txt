@@ -10,6 +10,7 @@ target_link_libraries(
 
 target_include_directories(
     tcp_echo_server PUBLIC
+    "${asio_header}"
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${PROJECT_BINARY_DIR}/src"
     "${PROJECT_SOURCE_DIR}/src"
@@ -27,6 +28,7 @@ target_link_libraries(
 
 target_include_directories(
     tcp_echo_client PUBLIC
+    "${asio_header}"
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${PROJECT_BINARY_DIR}/src"
     "${PROJECT_SOURCE_DIR}/src"
