@@ -30,6 +30,9 @@ std::string salt_error_category::message(int ev) const {
   case error_code::not_connected: {
     return "socket not connected";
   } break;
+  case error_code::require_disconnecet: {
+    return "packet assemble return disconnect";
+  } break;
   default: {
     return "(unknown error)";
   } break;

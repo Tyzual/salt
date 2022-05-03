@@ -50,6 +50,10 @@ private:
   _send(std::string address_v4, uint16_t port, uint32_t seq, std::string data,
         std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
+  void handle_read_error(const std::string &remote_address,
+                         uint16_t remote_port,
+                         const std::error_code &error_code);
+
 private:
   asio::io_context transfor_io_context_;
   asio::executor_work_guard<asio::io_context::executor_type>

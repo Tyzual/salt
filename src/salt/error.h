@@ -11,6 +11,7 @@ enum class error_code {
   send_queue_full,
   null_connection,
   not_connected,
+  require_disconnecet,
 };
 
 std::error_code make_error_code(error_code ec);

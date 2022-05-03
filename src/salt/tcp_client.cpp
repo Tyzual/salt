@@ -44,8 +44,12 @@ void tcp_client::connect(
 void tcp_client::_connect(
     std::string address_v4, uint16_t port,
     std::function<void(const std::error_code &)> call_back) {
-  auto connection =
-      tcp_connection::create(transfor_io_context_, assemble_creator_());
+  auto connection = tcp_connection::create(
+      transfor_io_context_, assemble_creator_(),
+      [this](const std::string &remote_addr, uint16_t port,
+             const std::error_code &error_code) {
+        this->handle_read_error(remote_addr, port, error_code);
+      });
   all_[{address_v4, port}] = connection;
   resolver_.async_resolve(
       address_v4, std::to_string(port),
@@ -154,6 +158,24 @@ void tcp_client::_send(
   } else {
     pos->second->send(seq, std::move(data), std::move(call_back));
   }
+}
+
+void tcp_client::handle_read_error(const std::string &remote_address,
+                                   uint16_t remote_port,
+                                   const std::error_code &error_code) {
+  log_error("read from %s:%u error, reason:%s, disconnect",
+            remote_address.c_str(), remote_port, error_code.message().c_str());
+  disconnect(remote_address, remote_port,
+             [remote_address, remote_port](const std::error_code &err_code) {
+               if (err_code) {
+                 log_error("disconnect from %s:%u error, reason:%s",
+                           remote_address.c_str(), remote_port,
+                           err_code.message().c_str());
+               } else {
+                 log_error("disconnect from %s:%u success",
+                           remote_address.c_str(), remote_port);
+               }
+             });
 }
 
 } // namespace salt
