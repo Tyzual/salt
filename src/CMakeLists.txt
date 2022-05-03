@@ -26,13 +26,13 @@ configure_file(salt/version.h.in salt/version.h)
 target_include_directories(salt PRIVATE 
                             "${CMAKE_CURRENT_BINARY_DIR}" 
                             "${CMAKE_CURRENT_SOURCE_DIR}"
-                            "${CMAKE_SOURCE_DIR}/asio"
+                            "${CMAKE_SOURCE_DIR}/asio/asio/include"
 )
 
 target_include_directories(salt INTERFACE 
                             "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>" 
                             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-                            "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}:asio>"
+                            "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/asio/asio/include>"
 )
 
 target_link_libraries(salt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
@@ -48,7 +48,6 @@ install(FILES
             salt/tcp_connection_handle.h
             salt/tcp_connection.cpp
             salt/tcp_connection.h
-            salt/tcp_server.cpp
             salt/tcp_server.h
             salt/tcp_client.cpp
             salt/tcp_client.h
