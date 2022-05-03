@@ -35,14 +35,14 @@ int main() {
     }
   });
 
-  while (true) {
+  for (uint32_t i = 0; ; i++) {
     std::string line;
     std::getline(std::cin, line);
     if (line == "quit") {
       break;
     }
 
-    client.broadcast(line, [](auto seq, auto error_code) {
+    client.broadcast(i, line, [](auto seq, auto error_code) {
       std::cout << "send data seq:" << seq
                 << ", with error code:" << error_code.message() << std::endl;
     });

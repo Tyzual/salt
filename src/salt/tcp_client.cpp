@@ -125,12 +125,14 @@ void tcp_client::set_assemble_creator(
   assemble_creator_ = assemble_creator;
 }
 
-void tcp_client::broadcast(std::string s, tcp_connection::call_back call_back) {
-  static uint32_t seq = 0;
-  for (auto& connected: connected_) {
-    connected.second->send(seq, s, call_back);
-  }
-  seq++;
+void tcp_client::broadcast(uint32_t seq, std::string s,
+                           tcp_connection::call_back call_back) {
+  control_thread_.get_io_context().post(
+      [this, seq, s = std::move(s), call_back = std::move(call_back)] {
+        for (auto &connected : connected_) {
+          connected.second->send(seq, s, call_back);
+        }
+      });
 }
 
 } // namespace salt
