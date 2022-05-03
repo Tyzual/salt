@@ -5,8 +5,12 @@
 #include "salt/version.h"
 
 static void send_call_back(uint32_t seq, const std::error_code &error_code) {
-  std::cout << "send data seq:" << seq
-            << ", with error code:" << error_code.message() << std::endl;
+  if (error_code) {
+    std::cout << "send data seq:" << seq
+              << ", with error code:" << error_code.message() << std::endl;
+  } else {
+    std::cout << "send data seq:" << seq << " success" << std::endl;
+  }
 }
 
 class echo_packet_assemble : public salt::base_packet_assemble {

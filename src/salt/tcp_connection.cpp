@@ -21,18 +21,9 @@ tcp_connection::create(asio::io_context &transfer_io_context,
 }
 
 void tcp_connection::disconnect() {
+  log_debug("socket %s:%u disconnect from %s:%u", local_address_.c_str(),
+            local_port_, remote_address_.c_str(), remote_port_);
   std::error_code error_code;
-  auto remote_endpoint = socket_.remote_endpoint(error_code);
-  if (!error_code) {
-    auto local_endpoint = socket_.local_endpoint(error_code);
-    if (!error_code) {
-      log_debug("socket %s:%u disconnect from %s:%u",
-                local_endpoint.address().to_string().c_str(),
-                local_endpoint.port(),
-                remote_endpoint.address().to_string().c_str(),
-                remote_endpoint.port());
-    }
-  }
   socket_.close(error_code);
   send_items_.clear();
   receive_buffer_.clear();
@@ -96,17 +87,14 @@ bool tcp_connection::read() {
       asio::buffer(receive_buffer_),
       [this, _this](const std::error_code &err_code, std::size_t data_length) {
         if (err_code && data_length <= 0) {
-          log_error(
-              "read data from %s:%u error, reason:%s",
-              this->socket_.remote_endpoint().address().to_string().c_str(),
-              this->socket_.remote_endpoint().port(),
-              err_code.message().c_str());
+          log_error("read data from %s:%u error, reason:%s",
+                    remote_address_.c_str(), remote_port_,
+                    err_code.message().c_str());
           return;
         } else if (err_code) {
           log_error(
               "read data from %s:%u error, but remain %zu byte data, reason:%s",
-              this->socket_.remote_endpoint().address().to_string().c_str(),
-              this->socket_.remote_endpoint().port(), data_length,
+              remote_address_.c_str(), remote_port_, data_length,
               err_code.message().c_str());
           return;
         }
@@ -116,22 +104,16 @@ bool tcp_connection::read() {
         auto read_result = this->packet_assemble_->data_received(
             tcp_connection_handle::create(_this), std::move(data));
         if (read_result == data_read_result::disconnect) {
-          log_error(
-              "read data from %s:%u error, disconnect",
-              this->socket_.remote_endpoint().address().to_string().c_str(),
-              this->socket_.remote_endpoint().port());
+          log_error("read data from %s:%u error, disconnect",
+                    remote_address_.c_str(), remote_port_);
           this->disconnect();
           return;
         } else if (read_result == data_read_result::error) {
-          log_error(
-              "read data from %s:%u error, but continue read",
-              this->socket_.remote_endpoint().address().to_string().c_str(),
-              this->socket_.remote_endpoint().port());
+          log_error("read data from %s:%u error, but continue read",
+                    remote_address_.c_str(), remote_port_);
         } else {
-          log_debug(
-              "read data from %s:%u success, continue read",
-              this->socket_.remote_endpoint().address().to_string().c_str(),
-              this->socket_.remote_endpoint().port());
+          log_debug("read data from %s:%u success, continue read",
+                    remote_address_.c_str(), remote_port_);
         }
         this->read();
       });

@@ -53,18 +53,37 @@ bool tcp_server::accept() {
     log_error("create connection error");
     return false;
   }
-  acceptor_->async_accept(connection->get_socket(),
-                          [this, connection](const std::error_code &err_code) {
-                            if (!err_code) {
-                              log_debug("accept success");
-                              connection->read();
-                            } else {
-                              log_error("accept error, reason:%s",
-                                        err_code.message().c_str());
-                            }
+  acceptor_->async_accept(
+      connection->get_socket(),
+      [this, connection](const std::error_code &err_code) {
+        if (!err_code) {
+          {
+            std::error_code error_code;
+            const auto &local_endpoint =
+                connection->get_socket().local_endpoint(error_code);
+            if (!error_code) {
+              connection->set_local_address(
+                  local_endpoint.address().to_string());
+              connection->set_local_port(local_endpoint.port());
+            }
+            const auto &remote_endpoint =
+                connection->get_socket().remote_endpoint(error_code);
+            if (!error_code) {
+              connection->set_remote_address(
+                  remote_endpoint.address().to_string());
+              connection->set_remote_port(remote_endpoint.port());
+            }
+          }
+          log_debug("accept new connection from %s:%u",
+                    connection->get_remote_address().c_str(),
+                    connection->get_remote_port());
+          connection->read();
+        } else {
+          log_error("accept error, reason:%s", err_code.message().c_str());
+        }
 
-                            this->accept();
-                          });
+        this->accept();
+      });
   return true;
 }
 

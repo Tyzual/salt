@@ -14,30 +14,6 @@
 
 namespace salt {
 
-#if 0
-class tcp_client;
-
-class tcp_client_start_argument {
-public:
-  tcp_client_start_argument &add_server(std::string address_v4, uint16_t port);
-
-  tcp_client_start_argument &
-  add_server(std::initializer_list<std::pair<std::string, uint16_t>> servers);
-
-  inline tcp_client_start_argument &
-  set_io_thread_count(uint32_t io_thread_count) {
-    io_thread_count_ = io_thread_count;
-    return *this;
-  }
-
-private:
-  std::set<std::pair<std::string, uint16_t>> servers_;
-  uint32_t io_thread_count_;
-
-  friend class tcp_client;
-};
-#endif
-
 class tcp_client {
 public:
   tcp_client();
@@ -48,12 +24,18 @@ public:
                std::function<void(const std::error_code &)> call_back);
 
   void disconnect(std::string address_v4, uint16_t port,
-                  std::function<void(const std::error_code&)> call_back);
+                  std::function<void(const std::error_code &)> call_back);
 
   void set_assemble_creator(
       std::function<base_packet_assemble *(void)> assemble_creator);
 
-  void broadcast(uint32_t seq, std::string, tcp_connection::call_back);
+  void broadcast(
+      uint32_t seq, std::string data,
+      std::function<void(uint32_t seq, const std::error_code &)> call_back);
+
+  void
+  send(std::string address_v4, uint16_t port, uint32_t seq, std::string data,
+       std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
   void stop();
 
@@ -62,7 +44,11 @@ private:
                 std::function<void(const std::error_code &)> call_back);
 
   void _disconnect(std::string address_v4, uint16_t port,
-                  std::function<void(const std::error_code&)> call_back);
+                   std::function<void(const std::error_code &)> call_back);
+
+  void
+  _send(std::string address_v4, uint16_t port, uint32_t seq, std::string data,
+        std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
 private:
   asio::io_context transfor_io_context_;
