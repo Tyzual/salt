@@ -81,7 +81,9 @@ void tcp_client::_connect(
                 log_debug("connected to host:%s:%u",
                           endpoint.address().to_string().c_str(),
                           endpoint.port());
-                connected_[{address_v4, port}] = std::move(connection);
+                addr_v4 key{address_v4, port};
+                connected_[key] = std::move(connection);
+                connected_[key]->read();
               }
             });
       });
@@ -121,6 +123,16 @@ void tcp_client::_disconnect(
 void tcp_client::set_assemble_creator(
     std::function<base_packet_assemble *(void)> assemble_creator) {
   assemble_creator_ = assemble_creator;
+}
+
+void tcp_client::broadcast(uint32_t seq, std::string s,
+                           tcp_connection::call_back call_back) {
+  control_thread_.get_io_context().post(
+      [this, seq, s = std::move(s), call_back = std::move(call_back)] {
+        for (auto &connected : connected_) {
+          connected.second->send(seq, s, call_back);
+        }
+      });
 }
 
 } // namespace salt
