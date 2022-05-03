@@ -6,6 +6,7 @@
 #include "salt/error.h"
 #include "salt/log.h"
 #include "salt/tcp_connection_handle.h"
+#include "salt/util/call_back_wrapper.h"
 
 namespace salt {
 
@@ -44,7 +45,7 @@ void tcp_connection::_send(
       asio::bind_executor(
           strand_, [this, _this, call_back,
                     seq](const std::error_code &err_code, std::size_t length) {
-            call_back(seq, err_code);
+            call(call_back, seq, err_code);
             if (this->send_items_.empty()) {
               this->write_flag_.clear();
               return;
@@ -71,7 +72,7 @@ void tcp_connection::send(
           if (this->send_items_.size() > this->send_buffer_max_size_) {
             log_error("too many send items(%u), drop data",
                       this->send_buffer_max_size_);
-            call_back(seq, make_error_code(error_code::send_queue_full));
+            call(call_back, seq, make_error_code(error_code::send_queue_full));
           } else {
             this->send_items_.push_back(
                 std::make_tuple(seq, std::move(data), call_back));

@@ -2,6 +2,7 @@
 
 #include "salt/error.h"
 #include "salt/log.h"
+#include "salt/util/call_back_wrapper.h"
 
 namespace salt {
 
@@ -31,7 +32,7 @@ void tcp_client::connect(
     std::string address_v4, uint16_t port,
     std::function<void(const std::error_code &)> call_back) {
   if (!assemble_creator_) {
-    call_back(make_error_code(error_code::assemble_creator_not_set));
+    call(call_back, make_error_code(error_code::assemble_creator_not_set));
     return;
   }
   control_thread_.get_io_context().post(
@@ -64,8 +65,7 @@ void tcp_client::_connect(
              connection = std::move(connection)](
                 const std::error_code &error_code,
                 const asio::ip::tcp::endpoint &endpoint) {
-              if (call_back)
-                call_back(error_code);
+              call(call_back, error_code);
 
               if (!error_code) {
                 log_debug("connected to host:%s:%u",
@@ -116,9 +116,9 @@ void tcp_client::_disconnect(
     auto pos = all_.find({address_v4, port});
     if (pos != all_.end()) {
       all_.erase(pos);
-      call_back(make_error_code(error_code::success));
+      call(call_back, make_error_code(error_code::success));
     } else {
-      call_back(make_error_code(error_code::not_connected));
+      call(call_back, make_error_code(error_code::not_connected));
     }
   }
 }
@@ -154,7 +154,7 @@ void tcp_client::_send(
     std::function<void(uint32_t seq, const std::error_code &)> call_back) {
   auto pos = connected_.find({std::move(address_v4), port});
   if (pos == connected_.end()) {
-    call_back(seq, make_error_code(error_code::not_connected));
+    call(call_back, seq, make_error_code(error_code::not_connected));
   } else {
     pos->second->send(seq, std::move(data), std::move(call_back));
   }
@@ -172,7 +172,7 @@ void tcp_client::handle_read_error(const std::string &remote_address,
                            remote_address.c_str(), remote_port,
                            err_code.message().c_str());
                } else {
-                 log_error("disconnect from %s:%u success",
+                 log_debug("disconnect from %s:%u success",
                            remote_address.c_str(), remote_port);
                }
              });

@@ -1,5 +1,6 @@
 #include "salt/tcp_connection_handle.h"
 #include "salt/error.h"
+#include "salt/util/call_back_wrapper.h"
 
 namespace salt {
 
@@ -8,7 +9,7 @@ void tcp_connection_handle::send(
     std::function<void(uint32_t seq, const std::error_code &)> call_back) {
   if (!connection_) {
     if (call_back) {
-      call_back(seq, make_error_code(error_code::null_connection));
+      call(call_back, seq, make_error_code(error_code::null_connection));
     }
     return;
   }

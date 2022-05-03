@@ -18,6 +18,7 @@ add_library(salt
             salt/tcp_server.h
             salt/tcp_client.cpp
             salt/tcp_client.h
+            salt/util/call_back_wrapper.h
 )
 
 configure_file(salt/version.h.in salt/version.h)
