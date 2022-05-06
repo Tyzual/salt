@@ -17,11 +17,11 @@ salt是一个基于c++ asio的网络框架，计划支持tcp的服务端和客�
 其它
 - [ ] 可扩展的日志接口
 - [ ] 持续集成
-- [ ] cmake Config-file package
+- [x] cmake Config-file package
 
 # 编译方式
 ```bash
-git clone https://github.com/Tyzual/salt.git
+git clone --recursive https://github.com/Tyzual/salt.git
 cd salt
 mkdir build && cd build
 cmake .. && make
