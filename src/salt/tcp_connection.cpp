@@ -95,14 +95,14 @@ bool tcp_connection::read() {
           log_error("read data from %s:%u error, reason:%s",
                     remote_address_.c_str(), remote_port_,
                     err_code.message().c_str());
-          notify_read_error(err_code);
+          notify_connection_error(err_code);
           return;
         } else if (err_code) {
           log_error(
               "read data from %s:%u error, but remain %zu byte data, reason:%s",
               remote_address_.c_str(), remote_port_, data_length,
               err_code.message().c_str());
-          notify_read_error(err_code);
+          notify_connection_error(err_code);
           return;
         }
         log_debug("receive %zu byte data", data_length);
@@ -115,7 +115,7 @@ bool tcp_connection::read() {
               "read data from %s:%u finish, packet assemble return disconnect",
               remote_address_.c_str(), remote_port_);
           this->disconnect();
-          notify_read_error(make_error_code(error_code::require_disconnecet));
+          notify_connection_error(make_error_code(error_code::require_disconnecet));
           return;
         } else if (read_result == data_read_result::error) {
           log_error("read data from %s:%u error, but continue read",
@@ -129,10 +129,12 @@ bool tcp_connection::read() {
   return true;
 }
 
-void tcp_connection::notify_read_error(const std::error_code &error_code) {
-  if (read_notify_callback_) {
-    read_notify_callback_(remote_address_, remote_port_, error_code);
-  }
+void tcp_connection::notify_connection_error(const std::error_code &error_code) {
+  call(connection_notify_callback_, remote_address_, remote_port_, error_code);
+}
+
+void tcp_connection::handle_fail_connection(const std::error_code& error_code) {
+  notify_connection_error(error_code);
 }
 
 } // namespace salt

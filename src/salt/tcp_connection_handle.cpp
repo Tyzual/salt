@@ -8,9 +8,7 @@ void tcp_connection_handle::send(
     uint32_t seq, std::string data,
     std::function<void(uint32_t seq, const std::error_code &)> call_back) {
   if (!connection_) {
-    if (call_back) {
-      call(call_back, seq, make_error_code(error_code::null_connection));
-    }
+    call(call_back, seq, make_error_code(error_code::null_connection));
     return;
   }
 

@@ -29,6 +29,29 @@ void tcp_client::init(uint32_t transfer_thread_count) {
 }
 
 void tcp_client::connect(
+    std::string address_v4, uint16_t port, const connection_meta &meta,
+    std::function<void(const std::error_code &)> call_back) {
+  if (!assemble_creator_) {
+    call(call_back, make_error_code(error_code::assemble_creator_not_set));
+    return;
+  }
+
+  connection_meta_impl meta_impl{meta, 0};
+  control_thread_.get_io_context().post(
+      [this, meta_impl, address_v4 = std::move(address_v4), port,
+       call_back = std::move(call_back)] {
+        if (meta_impl.meta_.retry_when_connection_error &&
+            (meta_impl.meta_.retry_forever ||
+             (!meta_impl.meta_.retry_forever &&
+              meta_impl.meta_.max_retry_cnt > 0)) &&
+            meta_impl.meta_.retry_interval_s > 0) {
+          connection_metas_[{address_v4, port}] = meta_impl;
+        }
+        _connect(std::move(address_v4), port, std::move(call_back));
+      });
+}
+
+void tcp_client::connect(
     std::string address_v4, uint16_t port,
     std::function<void(const std::error_code &)> call_back) {
   if (!assemble_creator_) {
@@ -49,8 +72,10 @@ void tcp_client::_connect(
       transfor_io_context_, assemble_creator_(),
       [this](const std::string &remote_addr, uint16_t port,
              const std::error_code &error_code) {
-        this->handle_read_error(remote_addr, port, error_code);
+        this->handle_connection_error(remote_addr, port, error_code);
       });
+  connection->set_remote_address(address_v4);
+  connection->set_remote_port(port);
   all_[{address_v4, port}] = connection;
   resolver_.async_resolve(
       address_v4, std::to_string(port),
@@ -58,6 +83,12 @@ void tcp_client::_connect(
        call_back = std::move(call_back), address_v4 = std::move(address_v4),
        port](const std::error_code &err_code,
              asio::ip::tcp::resolver::results_type result) {
+        if (err_code) {
+          call(call_back, err_code);
+          connection->handle_fail_connection(err_code);
+          return;
+        }
+
         asio::async_connect(
             connection->get_socket(), result,
             [this, call_back = std::move(call_back),
@@ -83,9 +114,10 @@ void tcp_client::_connect(
                     connection->set_local_port(local_endpoint.port());
                   }
                 }
-                addr_v4 key{address_v4, port};
-                connected_[key] = connection;
+                connected_[{address_v4, port}] = connection;
                 connection->read();
+              } else {
+                connection->handle_fail_connection(error_code);
               }
             });
       });
@@ -160,10 +192,10 @@ void tcp_client::_send(
   }
 }
 
-void tcp_client::handle_read_error(const std::string &remote_address,
-                                   uint16_t remote_port,
-                                   const std::error_code &error_code) {
-  log_error("read from %s:%u error, reason:%s, disconnect",
+void tcp_client::handle_connection_error(const std::string &remote_address,
+                                         uint16_t remote_port,
+                                         const std::error_code &error_code) {
+  log_error("connection remote address %s:%u error, reason:%s, disconnect",
             remote_address.c_str(), remote_port, error_code.message().c_str());
   disconnect(remote_address, remote_port,
              [remote_address, remote_port](const std::error_code &err_code) {

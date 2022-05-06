@@ -61,16 +61,18 @@ public:
 
   inline uint16_t get_local_port() const { return local_port_; }
 
+  void handle_fail_connection(const std::error_code &error_code);
+
 private:
   tcp_connection(asio::io_context &transfer_io_context,
                  base_packet_assemble *packet_assemble,
                  std::function<void(const std::string &addr, uint16_t port,
                                     const std::error_code &error_code)>
-                     read_notify_callback)
+                     connection_notify_callback)
       : transfer_io_context_(transfer_io_context), socket_(transfer_io_context),
         packet_assemble_(packet_assemble),
         strand_(asio::make_strand(transfer_io_context)),
-        read_notify_callback_(std::move(read_notify_callback)) {
+        connection_notify_callback_(std::move(connection_notify_callback)) {
     log_debug("create tcp_conection:%p", this);
   }
 
@@ -80,7 +82,7 @@ private:
   _send(uint32_t seq, std::string data,
         std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
-  void notify_read_error(const std::error_code &error_code);
+  void notify_connection_error(const std::error_code &error_code);
 
 private:
   asio::io_context &transfer_io_context_;
@@ -101,7 +103,7 @@ private:
   uint16_t local_port_{0};
   std::function<void(const std::string &remote_address, uint16_t remote_port,
                      const std::error_code &error_code)>
-      read_notify_callback_;
+      connection_notify_callback_;
 };
 
 } // namespace salt

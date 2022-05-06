@@ -14,11 +14,22 @@
 
 namespace salt {
 
+struct connection_meta {
+  bool retry_when_connection_error{true};
+  bool retry_forever{false};
+  uint32_t max_retry_cnt{3};
+  uint32_t retry_interval_s{5};
+};
+
 class tcp_client {
 public:
   tcp_client();
   ~tcp_client();
   void init(uint32_t transfer_thread_count);
+
+  void connect(std::string address_v4, uint16_t port,
+               const connection_meta &meta,
+               std::function<void(const std::error_code &)> call_back);
 
   void connect(std::string address_v4, uint16_t port,
                std::function<void(const std::error_code &)> call_back);
@@ -50,9 +61,9 @@ private:
   _send(std::string address_v4, uint16_t port, uint32_t seq, std::string data,
         std::function<void(uint32_t seq, const std::error_code &)> call_back);
 
-  void handle_read_error(const std::string &remote_address,
-                         uint16_t remote_port,
-                         const std::error_code &error_code);
+  void handle_connection_error(const std::string &remote_address,
+                               uint16_t remote_port,
+                               const std::error_code &error_code);
 
 private:
   asio::io_context transfor_io_context_;
@@ -73,8 +84,14 @@ private:
     }
   };
 
+  struct connection_meta_impl {
+    connection_meta meta_;
+    uint32_t current_retry_cnt_{0};
+  };
+
   std::map<addr_v4, std::shared_ptr<tcp_connection>> connected_;
   std::map<addr_v4, std::shared_ptr<tcp_connection>> all_;
+  std::map<addr_v4, connection_meta_impl> connection_metas_;
   std::function<base_packet_assemble *(void)> assemble_creator_{nullptr};
   std::vector<std::shared_ptr<shared_asio_io_context_thread>> io_threads_;
 };
