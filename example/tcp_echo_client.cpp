@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -26,6 +27,29 @@ public:
   }
 };
 
+class tcp_client_notify : public salt::tcp_client_notify {
+public:
+  void connection_connected(const std::string &remote_addr,
+                            uint16_t remote_port) override {
+    std::cout << "connected to " << remote_addr << ":" << remote_port
+              << std::endl;
+  }
+
+  void connection_disconnected(const std::error_code &error_code,
+                               const std::string &remote_addr,
+                               uint16_t remote_port) override {
+
+    std::cout << "disconnected from " << remote_addr << ":" << remote_port
+              << ", reason:" << error_code.message() << std::endl;
+  }
+
+  void connection_dropped(const std::string &remote_addr,
+                          uint16_t remote_port) override {
+    std::cout << "drop connection, remote addr:" << remote_addr << ":"
+              << remote_port << std::endl;
+  }
+};
+
 int main() {
 
   salt::tcp_client client;
@@ -34,19 +58,14 @@ int main() {
 
   salt::connection_meta meta;
   meta.retry_when_connection_error = true;
-  meta.retry_forever = false;
+  meta.retry_forever = true;
   meta.max_retry_cnt = 10;
   meta.retry_interval_s = 1;
 
-  client.connect(
-      "127.0.0.1", 2002, meta, [](const std::error_code &error_code) {
-        if (error_code) {
-          std::cout << "connect to 127.0.0.1:2002 error, reason:"
-                    << error_code.message() << std::endl;
-        } else {
-          std::cout << "connect to 127.0.0.1:2002 success" << std::endl;
-        }
-      });
+  tcp_client_notify client_notify;
+  client.set_notify(&client_notify);
+
+  client.connect("127.0.0.1", 2002, meta);
 
   while (true) {
     std::string line;
@@ -55,7 +74,7 @@ int main() {
     util::string::in_place_trim(line);
 
     if (util::string::start_with(line, "\\quit")) {
-      return 0;
+      break;
     }
 
     auto broadcast = false;
@@ -72,14 +91,7 @@ int main() {
     }
   }
 
-  client.disconnect("127.0.0.1", 2002, [](const std::error_code &error_code) {
-    if (error_code) {
-      std::cout << "disconnect to 127.0.0.1:2002 error, reason:"
-                << error_code.message() << std::endl;
-    } else {
-      std::cout << "disconnect to 127.0.0.1:2002 success" << std::endl;
-    }
-  });
+  client.disconnect("127.0.0.1", 2002);
 
   return 0;
 }
