@@ -5,14 +5,13 @@
 namespace salt {
 
 void tcp_connection_handle::send(
-    uint32_t seq, std::string data,
-    std::function<void(uint32_t seq, const std::error_code &)> call_back) {
+    std::string data, std::function<void(const std::error_code &)> call_back) {
   if (!connection_) {
-    call(call_back, seq, make_error_code(error_code::null_connection));
+    call(call_back, make_error_code(error_code::null_connection));
     return;
   }
 
-  connection_->send(seq, std::move(data), call_back);
+  connection_->send(std::move(data), std::move(call_back));
 }
 
 tcp_connection_handle::tcp_connection_handle(

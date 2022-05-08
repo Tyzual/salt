@@ -40,13 +40,11 @@ public:
   void set_assemble_creator(
       std::function<base_packet_assemble *(void)> assemble_creator);
 
-  void broadcast(
-      uint32_t seq, std::string data,
-      std::function<void(uint32_t seq, const std::error_code &)> call_back);
+  void broadcast(std::string data,
+                 std::function<void(const std::error_code &)> call_back);
 
-  void
-  send(std::string address_v4, uint16_t port, uint32_t seq, std::string data,
-       std::function<void(uint32_t seq, const std::error_code &)> call_back);
+  void send(std::string address_v4, uint16_t port, std::string data,
+            std::function<void(const std::error_code &)> call_back);
 
   void stop();
 
@@ -57,9 +55,8 @@ private:
   void _disconnect(std::string address_v4, uint16_t port,
                    std::function<void(const std::error_code &)> call_back);
 
-  void
-  _send(std::string address_v4, uint16_t port, uint32_t seq, std::string data,
-        std::function<void(uint32_t seq, const std::error_code &)> call_back);
+  void _send(std::string address_v4, uint16_t port, std::string data,
+             std::function<void(const std::error_code &)> call_back);
 
   void handle_connection_error(const std::string &remote_address,
                                uint16_t remote_port,

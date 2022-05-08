@@ -7,12 +7,12 @@
 
 #include "util/string_util.h"
 
-static void send_call_back(uint32_t seq, const std::error_code &error_code) {
+static void send_call_back(const std::error_code &error_code) {
   if (error_code) {
-    std::cout << "send data seq:" << seq
-              << ", with error code:" << error_code.message() << std::endl;
+    std::cout << "send data with error code:" << error_code.message()
+              << std::endl;
   } else {
-    std::cout << "send data seq:" << seq << " success" << std::endl;
+    std::cout << "send data success" << std::endl;
   }
 }
 
@@ -31,24 +31,31 @@ int main() {
   salt::tcp_client client;
   client.init(1);
   client.set_assemble_creator([] { return new echo_packet_assemble(); });
-  client.connect("127.0.0.1", 2002, [](const std::error_code &error_code) {
-    if (error_code) {
-      std::cout << "connect to 127.0.0.1:2002 error, reason:"
-                << error_code.message() << std::endl;
-      std::exit(1);
-    } else {
-      std::cout << "connect to 127.0.0.1:2002 success" << std::endl;
-    }
-  });
 
-  for (uint32_t i = 0;; ++i) {
+  salt::connection_meta meta;
+  meta.retry_when_connection_error = true;
+  meta.retry_forever = false;
+  meta.max_retry_cnt = 10;
+  meta.retry_interval_s = 1;
+
+  client.connect(
+      "127.0.0.1", 2002, meta, [](const std::error_code &error_code) {
+        if (error_code) {
+          std::cout << "connect to 127.0.0.1:2002 error, reason:"
+                    << error_code.message() << std::endl;
+        } else {
+          std::cout << "connect to 127.0.0.1:2002 success" << std::endl;
+        }
+      });
+
+  while (true) {
     std::string line;
     std::getline(std::cin, line);
 
     util::string::in_place_trim(line);
 
     if (util::string::start_with(line, "\\quit")) {
-      break;
+      return 0;
     }
 
     auto broadcast = false;
@@ -59,9 +66,9 @@ int main() {
     }
 
     if (broadcast) {
-      client.broadcast(i, line, send_call_back);
+      client.broadcast(line, send_call_back);
     } else {
-      client.send("127.0.0.1", 2002, i, line, send_call_back);
+      client.send("127.0.0.1", 2002, line, send_call_back);
     }
   }
 
