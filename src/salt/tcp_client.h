@@ -14,6 +14,21 @@
 
 namespace salt {
 
+class tcp_client_notify {
+public:
+  virtual ~tcp_client_notify() = default;
+
+  virtual void connection_connected(const std::string &remote_addr,
+                                    uint16_t remote_port) = 0;
+
+  virtual void connection_disconnected(const std::error_code &error_code,
+                                       const std::string &remote_addr,
+                                       uint16_t remote_port) = 0;
+
+  virtual void connection_dropped(const std::string &remote_addr,
+                                  uint16_t remote_port) = 0;
+};
+
 struct connection_meta {
   bool retry_when_connection_error{true};
   bool retry_forever{false};
@@ -28,14 +43,11 @@ public:
   void init(uint32_t transfer_thread_count);
 
   void connect(std::string address_v4, uint16_t port,
-               const connection_meta &meta,
-               std::function<void(const std::error_code &)> call_back);
+               const connection_meta &meta);
 
-  void connect(std::string address_v4, uint16_t port,
-               std::function<void(const std::error_code &)> call_back);
+  void connect(std::string address_v4, uint16_t port);
 
-  void disconnect(std::string address_v4, uint16_t port,
-                  std::function<void(const std::error_code &)> call_back);
+  void disconnect(std::string address_v4, uint16_t port);
 
   void set_assemble_creator(
       std::function<base_packet_assemble *(void)> assemble_creator);
@@ -48,12 +60,12 @@ public:
 
   void stop();
 
-private:
-  void _connect(std::string address_v4, uint16_t port,
-                std::function<void(const std::error_code &)> call_back);
+  void set_notify(tcp_client_notify *notify);
 
-  void _disconnect(std::string address_v4, uint16_t port,
-                   std::function<void(const std::error_code &)> call_back);
+private:
+  void _connect(std::string address_v4, uint16_t port);
+
+  void _disconnect(std::string address_v4, uint16_t port);
 
   void _send(std::string address_v4, uint16_t port, std::string data,
              std::function<void(const std::error_code &)> call_back);
@@ -62,13 +74,15 @@ private:
                                uint16_t remote_port,
                                const std::error_code &error_code);
 
-private:
-  asio::io_context transfor_io_context_;
-  asio::executor_work_guard<asio::io_context::executor_type>
-      transfor_io_context_work_guard_;
-  asio_io_context_thread control_thread_;
-  asio::ip::tcp::resolver resolver_;
+  void notify_connected(const std::string &remote_addr, uint16_t remote_port);
 
+  void notify_disconnected(const std::error_code &error_code,
+                           const std::string &remote_addr,
+                           uint16_t remote_port);
+
+  void notify_dropped(const std::string &remote_addr, uint16_t remote_port);
+
+private:
   struct addr_v4 {
     std::string host;
     uint16_t port;
@@ -90,6 +104,14 @@ private:
   std::map<addr_v4, std::shared_ptr<tcp_connection>> all_;
   std::map<addr_v4, connection_meta_impl> connection_metas_;
   std::function<base_packet_assemble *(void)> assemble_creator_{nullptr};
+  tcp_client_notify *notify_{nullptr};
+
+private:
+  asio::io_context transfor_io_context_;
+  asio::executor_work_guard<asio::io_context::executor_type>
+      transfor_io_context_work_guard_;
+  asio_io_context_thread control_thread_;
+  asio::ip::tcp::resolver resolver_;
   std::vector<std::shared_ptr<shared_asio_io_context_thread>> io_threads_;
 };
 

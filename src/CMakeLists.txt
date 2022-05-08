@@ -1,5 +1,7 @@
 find_package(Threads)
 
+# add_definitions(-DDISABLE_LOG)
+
 add_library(salt
             salt/asio_io_context_thread.cpp
             salt/asio_io_context_thread.h

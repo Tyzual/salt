@@ -12,6 +12,7 @@ enum class error_code {
   null_connection,
   not_connected,
   require_disconnecet,
+  call_disconnect,
 };
 
 std::error_code make_error_code(error_code ec);
