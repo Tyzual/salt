@@ -161,34 +161,31 @@ void tcp_client::set_assemble_creator(
 }
 
 void tcp_client::broadcast(
-    uint32_t seq, std::string data,
-    std::function<void(uint32_t seq, const std::error_code &)> call_back) {
+    std::string data, std::function<void(const std::error_code &)> call_back) {
   control_thread_.get_io_context().post(
-      [this, seq, data = std::move(data), call_back = std::move(call_back)] {
+      [this, data = std::move(data), call_back = std::move(call_back)] {
         for (auto &connected : connected_) {
-          connected.second->send(seq, data, call_back);
+          connected.second->send(data, call_back);
         }
       });
 }
 
-void tcp_client::send(
-    std::string address_v4, uint16_t port, uint32_t seq, std::string data,
-    std::function<void(uint32_t seq, const std::error_code &)> call_back) {
+void tcp_client::send(std::string address_v4, uint16_t port, std::string data,
+                      std::function<void(const std::error_code &)> call_back) {
   control_thread_.get_io_context().post(
-      [this, address_v4 = std::move(address_v4), port, seq,
-       data = std::move(data), call_back = std::move(call_back)]() {
-        _send(std::move(address_v4), port, seq, std::move(data), call_back);
+      [this, address_v4 = std::move(address_v4), port, data = std::move(data),
+       call_back = std::move(call_back)]() {
+        _send(std::move(address_v4), port, std::move(data), call_back);
       });
 }
 
-void tcp_client::_send(
-    std::string address_v4, uint16_t port, uint32_t seq, std::string data,
-    std::function<void(uint32_t seq, const std::error_code &)> call_back) {
+void tcp_client::_send(std::string address_v4, uint16_t port, std::string data,
+                       std::function<void(const std::error_code &)> call_back) {
   auto pos = connected_.find({std::move(address_v4), port});
   if (pos == connected_.end()) {
-    call(call_back, seq, make_error_code(error_code::not_connected));
+    call(call_back, make_error_code(error_code::not_connected));
   } else {
-    pos->second->send(seq, std::move(data), std::move(call_back));
+    pos->second->send(std::move(data), std::move(call_back));
   }
 }
 

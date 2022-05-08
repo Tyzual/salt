@@ -26,9 +26,8 @@ public:
 
   bool read();
 
-  void
-  send(uint32_t seq, std::string data,
-       std::function<void(uint32_t seq, const std::error_code &)> call_back);
+  void send(std::string data,
+            std::function<void(const std::error_code &)> call_back);
 
   void disconnect();
 
@@ -78,9 +77,8 @@ private:
 
   void init() { receive_buffer_.resize(receive_buffer_max_size_); }
 
-  void
-  _send(uint32_t seq, std::string data,
-        std::function<void(uint32_t seq, const std::error_code &)> call_back);
+  void _send(std::string data,
+             std::function<void(const std::error_code &)> call_back);
 
   void notify_connection_error(const std::error_code &error_code);
 
@@ -88,15 +86,14 @@ private:
   asio::io_context &transfer_io_context_;
   asio::ip::tcp::socket socket_;
   uint32_t send_buffer_max_size_{256};
-  std::deque<
-      std::tuple<uint32_t /* seq */, std::string /* data */,
-                 std::function<void(uint32_t seq, const std::error_code &)>>>
+  std::deque<std::pair<std::string /* data */,
+                       std::function<void(const std::error_code &)>>>
       send_items_;
   uint32_t receive_buffer_max_size_{1024};
   std::string receive_buffer_;
   std::unique_ptr<base_packet_assemble> packet_assemble_{nullptr};
   asio::strand<asio::io_context::executor_type> strand_;
-  std::atomic_flag write_flag_{false};
+  std::atomic_flag send_flag_{false};
   std::string remote_address_;
   uint16_t remote_port_{0};
   std::string local_address_;

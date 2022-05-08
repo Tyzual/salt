@@ -33,49 +33,46 @@ void tcp_connection::disconnect() {
   send_items_.clear();
   receive_buffer_.clear();
   receive_buffer_.resize(receive_buffer_max_size_);
-  write_flag_.clear();
+  send_flag_.clear();
 }
 
 void tcp_connection::_send(
-    uint32_t seq, std::string data,
-    std::function<void(uint32_t seq, const std::error_code &)> call_back) {
+    std::string data, std::function<void(const std::error_code &)> call_back) {
   auto _this{shared_from_this()};
   asio::async_write(
       this->socket_, asio::buffer(data),
       asio::bind_executor(
-          strand_, [this, _this, call_back,
-                    seq](const std::error_code &err_code, std::size_t length) {
-            call(call_back, seq, err_code);
+          strand_, [this, _this, call_back](const std::error_code &err_code,
+                                            std::size_t length) {
+            call(call_back, err_code);
             if (this->send_items_.empty()) {
-              this->write_flag_.clear();
+              this->send_flag_.clear();
               return;
             } else {
               auto item = this->send_items_.front();
               this->send_items_.pop_front();
-              this->_send(std::get<0>(item), std::move(std::get<1>(item)),
-                          std::get<2>(item));
+              _send(std::move(item.first), std::move(item.second));
             }
           }));
 }
 
 void tcp_connection::send(
-    uint32_t seq, std::string data,
-    std::function<void(uint32_t seq, const std::error_code &)> call_back) {
+    std::string data, std::function<void(const std::error_code &)> call_back) {
   auto _this{shared_from_this()};
   transfer_io_context_.post(asio::bind_executor(
-      strand_, [this, _this, data = std::move(data), call_back, seq] {
-        if (!write_flag_.test_and_set()) {
+      strand_, [this, _this, data = std::move(data), call_back] {
+        if (!send_flag_.test_and_set()) {
           // 没有未完成的写操作
-          _send(seq, data, call_back);
+          _send(data, std::move(call_back));
         } else {
           // 有未完成的写操作
           if (this->send_items_.size() > this->send_buffer_max_size_) {
             log_error("too many send items(%u), drop data",
                       this->send_buffer_max_size_);
-            call(call_back, seq, make_error_code(error_code::send_queue_full));
+            call(call_back, make_error_code(error_code::send_queue_full));
           } else {
             this->send_items_.push_back(
-                std::make_tuple(seq, std::move(data), call_back));
+                std::make_pair(std::move(data), std::move(call_back)));
           }
           return;
         }
@@ -115,7 +112,8 @@ bool tcp_connection::read() {
               "read data from %s:%u finish, packet assemble return disconnect",
               remote_address_.c_str(), remote_port_);
           this->disconnect();
-          notify_connection_error(make_error_code(error_code::require_disconnecet));
+          notify_connection_error(
+              make_error_code(error_code::require_disconnecet));
           return;
         } else if (read_result == data_read_result::error) {
           log_error("read data from %s:%u error, but continue read",
@@ -129,11 +127,12 @@ bool tcp_connection::read() {
   return true;
 }
 
-void tcp_connection::notify_connection_error(const std::error_code &error_code) {
+void tcp_connection::notify_connection_error(
+    const std::error_code &error_code) {
   call(connection_notify_callback_, remote_address_, remote_port_, error_code);
 }
 
-void tcp_connection::handle_fail_connection(const std::error_code& error_code) {
+void tcp_connection::handle_fail_connection(const std::error_code &error_code) {
   notify_connection_error(error_code);
 }
 

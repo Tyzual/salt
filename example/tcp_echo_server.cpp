@@ -4,12 +4,12 @@
 #include "salt/tcp_server.h"
 #include "salt/version.h"
 
-static void send_call_back(uint32_t seq, const std::error_code &error_code) {
+static void send_call_back(const std::error_code &error_code) {
   if (error_code) {
-    std::cout << "send data seq:" << seq
-              << ", with error code:" << error_code.message() << std::endl;
+    std::cout << "send data with error code:" << error_code.message()
+              << std::endl;
   } else {
-    std::cout << "send data seq:" << seq << " success" << std::endl;
+    std::cout << "send data success" << std::endl;
   }
 }
 
@@ -18,8 +18,7 @@ public:
   salt::data_read_result
   data_received(std::shared_ptr<salt::connection_handle> connection,
                 std::string s) override {
-    static uint32_t seq = 0;
-    connection->send(++seq, std::move(s), send_call_back);
+    connection->send(std::move(s), send_call_back);
 
     return salt::data_read_result::success;
   }

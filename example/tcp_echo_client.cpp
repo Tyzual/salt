@@ -7,12 +7,12 @@
 
 #include "util/string_util.h"
 
-static void send_call_back(uint32_t seq, const std::error_code &error_code) {
+static void send_call_back(const std::error_code &error_code) {
   if (error_code) {
-    std::cout << "send data seq:" << seq
-              << ", with error code:" << error_code.message() << std::endl;
+    std::cout << "send data with error code:" << error_code.message()
+              << std::endl;
   } else {
-    std::cout << "send data seq:" << seq << " success" << std::endl;
+    std::cout << "send data success" << std::endl;
   }
 }
 
@@ -41,28 +41,26 @@ int main() {
     }
   });
 
-  for (uint32_t i = 0;; ++i) {
-    std::string line;
-    std::getline(std::cin, line);
+  std::string line;
+  std::getline(std::cin, line);
 
+  util::string::in_place_trim(line);
+
+  if (util::string::start_with(line, "\\quit")) {
+    return 0;
+  }
+
+  auto broadcast = false;
+  if (util::string::start_with(line, "\\broadcast")) {
+    broadcast = true;
+    line = line.substr(strlen("\\broadcast"));
     util::string::in_place_trim(line);
+  }
 
-    if (util::string::start_with(line, "\\quit")) {
-      break;
-    }
-
-    auto broadcast = false;
-    if (util::string::start_with(line, "\\broadcast")) {
-      broadcast = true;
-      line = line.substr(strlen("\\broadcast"));
-      util::string::in_place_trim(line);
-    }
-
-    if (broadcast) {
-      client.broadcast(i, line, send_call_back);
-    } else {
-      client.send("127.0.0.1", 2002, i, line, send_call_back);
-    }
+  if (broadcast) {
+    client.broadcast(line, send_call_back);
+  } else {
+    client.send("127.0.0.1", 2002, line, send_call_back);
   }
 
   client.disconnect("127.0.0.1", 2002, [](const std::error_code &error_code) {
