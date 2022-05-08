@@ -1,5 +1,7 @@
 #include "salt/tcp_client.h"
 
+#include <chrono>
+
 #include "salt/error.h"
 #include "salt/log.h"
 #include "salt/util/call_back_wrapper.h"
@@ -68,12 +70,14 @@ void tcp_client::connect(
 void tcp_client::_connect(
     std::string address_v4, uint16_t port,
     std::function<void(const std::error_code &)> call_back) {
+
   auto connection = tcp_connection::create(
       transfor_io_context_, assemble_creator_(),
       [this](const std::string &remote_addr, uint16_t port,
              const std::error_code &error_code) {
         this->handle_connection_error(remote_addr, port, error_code);
       });
+
   connection->set_remote_address(address_v4);
   connection->set_remote_port(port);
   all_[{address_v4, port}] = connection;
@@ -114,7 +118,15 @@ void tcp_client::_connect(
                     connection->set_local_port(local_endpoint.port());
                   }
                 }
-                connected_[{address_v4, port}] = connection;
+
+                control_thread_.get_io_context().post(
+                    [this, address_v4, port, connection]() {
+                      auto pos = connection_metas_.find({address_v4, port});
+                      if (pos != connection_metas_.end()) {
+                        pos->second.current_retry_cnt_ = 0;
+                      }
+                      connected_[{address_v4, port}] = connection;
+                    });
                 connection->read();
               } else {
                 connection->handle_fail_connection(error_code);
@@ -192,8 +204,6 @@ void tcp_client::_send(std::string address_v4, uint16_t port, std::string data,
 void tcp_client::handle_connection_error(const std::string &remote_address,
                                          uint16_t remote_port,
                                          const std::error_code &error_code) {
-  log_error("connection remote address %s:%u error, reason:%s, disconnect",
-            remote_address.c_str(), remote_port, error_code.message().c_str());
   disconnect(remote_address, remote_port,
              [remote_address, remote_port](const std::error_code &err_code) {
                if (err_code) {
@@ -205,6 +215,58 @@ void tcp_client::handle_connection_error(const std::string &remote_address,
                            remote_address.c_str(), remote_port);
                }
              });
+  log_error("connection remote address %s:%u error, reason:%s, disconnect",
+            remote_address.c_str(), remote_port, error_code.message().c_str());
+
+  auto reconnect = [this, remote_address, remote_port](uint32_t wait_second) {
+    auto timer = std::make_shared<asio::steady_timer>(
+        control_thread_.get_io_context(), std::chrono::seconds(wait_second));
+    timer->async_wait([this, timer, remote_address = std::move(remote_address),
+                       remote_port](const std::error_code &) {
+      connect(std::move(remote_address), remote_port,
+              [](const std::error_code &) {});
+    });
+  };
+
+  control_thread_.get_io_context().post([this, remote_address, remote_port,
+                                         reconnect] {
+    auto pos = connection_metas_.find({remote_address, remote_port});
+    if (pos == connection_metas_.end()) {
+      log_debug("drop connection %s:%u", remote_address.c_str(), remote_port);
+      return;
+    } else {
+      if (!pos->second.meta_.retry_when_connection_error) {
+        log_debug("drop connection %s:%u", remote_address.c_str(), remote_port);
+        return;
+      } else {
+        if (!pos->second.meta_.retry_forever) {
+          if (pos->second.current_retry_cnt_ <
+              pos->second.meta_.max_retry_cnt) {
+            ++(pos->second.current_retry_cnt_);
+            log_debug(
+                "try reconnection to %s:%u for %u times after %u seconds, "
+                "max retry count:%u",
+                remote_address.c_str(), remote_port,
+                pos->second.current_retry_cnt_,
+                pos->second.meta_.retry_interval_s,
+                pos->second.meta_.max_retry_cnt);
+            reconnect(pos->second.meta_.retry_interval_s);
+          } else {
+            log_error("connection remote address %s:%u reaches max retry "
+                      "count:%u, drop connection",
+                      remote_address.c_str(), remote_port,
+                      pos->second.meta_.max_retry_cnt);
+            return;
+          }
+        } else {
+          log_debug("reconnection to %s:%u after %u seconds",
+                    remote_address.c_str(), remote_port,
+                    pos->second.meta_.retry_interval_s);
+          reconnect(pos->second.meta_.retry_interval_s);
+        }
+      }
+    }
+  });
 }
 
 } // namespace salt
