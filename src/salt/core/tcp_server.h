@@ -6,9 +6,9 @@
 
 #include "asio.hpp"
 
-#include "salt/asio_io_context_thread.h"
-#include "salt/shared_asio_io_context_thread.h"
-#include "salt/tcp_connection.h"
+#include "salt/core/asio_io_context_thread.h"
+#include "salt/core/shared_asio_io_context_thread.h"
+#include "salt/core/tcp_connection.h"
 
 namespace salt {
 

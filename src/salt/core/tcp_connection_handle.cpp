@@ -1,5 +1,5 @@
-#include "salt/tcp_connection_handle.h"
-#include "salt/error.h"
+#include "salt/core/tcp_connection_handle.h"
+#include "salt/core/error.h"
 #include "salt/util/call_back_wrapper.h"
 
 namespace salt {

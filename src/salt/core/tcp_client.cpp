@@ -1,9 +1,9 @@
-#include "salt/tcp_client.h"
+#include "salt/core/tcp_client.h"
 
 #include <chrono>
 
-#include "salt/error.h"
-#include "salt/log.h"
+#include "salt/core/error.h"
+#include "salt/core/log.h"
 #include "salt/util/call_back_wrapper.h"
 
 namespace salt {

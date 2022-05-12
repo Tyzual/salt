@@ -7,8 +7,8 @@
 
 #include "asio.hpp"
 
-#include "salt/log.h"
-#include "salt/packet_assemble.h"
+#include "salt/core/log.h"
+#include "salt/packet_assemble/packet_assemble.h"
 
 namespace salt {
 

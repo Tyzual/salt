@@ -1,7 +1,7 @@
 #pragma once
 
-#include "salt/connection_handle.h"
-#include "salt/tcp_connection.h"
+#include "salt/core/connection_handle.h"
+#include "salt/core/tcp_connection.h"
 
 namespace salt {
 

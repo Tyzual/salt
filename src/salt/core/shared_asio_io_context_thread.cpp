@@ -1,6 +1,6 @@
-#include "salt/shared_asio_io_context_thread.h"
+#include "salt/core/shared_asio_io_context_thread.h"
 
-#include "salt/log.h"
+#include "salt/core/log.h"
 
 namespace salt {
 

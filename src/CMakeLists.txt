@@ -3,36 +3,36 @@ find_package(Threads)
 # add_definitions(-DDISABLE_LOG)
 
 add_library(salt
-            salt/asio_io_context_thread.cpp
-            salt/asio_io_context_thread.h
-            salt/connection_handle.h
-            salt/error.cpp
-            salt/error.h
-            salt/log.h
-            salt/packet_assemble.h
-            salt/shared_asio_io_context_thread.cpp
-            salt/shared_asio_io_context_thread.h
-            salt/tcp_connection_handle.cpp
-            salt/tcp_connection_handle.h
-            salt/tcp_connection.cpp
-            salt/tcp_connection.h
-            salt/tcp_server.cpp
-            salt/tcp_server.h
-            salt/tcp_client.cpp
-            salt/tcp_client.h
+            salt/core/asio_io_context_thread.cpp
+            salt/core/asio_io_context_thread.h
+            salt/core/connection_handle.h
+            salt/core/error.cpp
+            salt/core/error.h
+            salt/core/log.h
+            salt/packet_assemble/packet_assemble.h
+            salt/core/shared_asio_io_context_thread.cpp
+            salt/core/shared_asio_io_context_thread.h
+            salt/core/tcp_connection_handle.cpp
+            salt/core/tcp_connection_handle.h
+            salt/core/tcp_connection.cpp
+            salt/core/tcp_connection.h
+            salt/core/tcp_server.cpp
+            salt/core/tcp_server.h
+            salt/core/tcp_client.cpp
+            salt/core/tcp_client.h
             salt/util/call_back_wrapper.h
 )
 
 configure_file(salt/version.h.in salt/version.h)
 
-target_include_directories(salt PRIVATE 
-                            "${CMAKE_CURRENT_BINARY_DIR}" 
+target_include_directories(salt PRIVATE
+                            "${CMAKE_CURRENT_BINARY_DIR}"
                             "${CMAKE_CURRENT_SOURCE_DIR}"
                             "${asio_header}"
 )
 
-target_include_directories(salt INTERFACE 
-                            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>" 
+target_include_directories(salt INTERFACE
+                            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
                             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
                             "$<INSTALL_INTERFACE:include>"
 )
@@ -41,22 +41,22 @@ target_link_libraries(salt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS salt EXPORT salt DESTINATION lib)
 install(FILES
-            salt/asio_io_context_thread.h
-            salt/connection_handle.h
-            salt/error.h
-            salt/log.h
-            salt/packet_assemble.h
-            salt/shared_asio_io_context_thread.h
-            salt/tcp_connection_handle.h
-            salt/tcp_connection.h
-            salt/tcp_server.h
-            salt/tcp_client.h
+            salt/core/asio_io_context_thread.h
+            salt/core/connection_handle.h
+            salt/core/error.h
+            salt/core/log.h
+            salt/packet_assemble/packet_assemble.h
+            salt/core/shared_asio_io_context_thread.h
+            salt/core/tcp_connection_handle.h
+            salt/core/tcp_connection.h
+            salt/core/tcp_server.h
+            salt/core/tcp_client.h
             DESTINATION include/salt
 )
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/salt/version.h" DESTINATION include/salt)
-install(EXPORT salt 
-    FILE salt.cmake 
+install(EXPORT salt
+    FILE salt.cmake
     DESTINATION lib/cmake/salt
 )
 

@@ -2,8 +2,8 @@
 #include <iostream>
 #include <string>
 
-#include "salt/packet_assemble.h"
-#include "salt/tcp_client.h"
+#include "salt/core/tcp_client.h"
+#include "salt/packet_assemble/packet_assemble.h"
 #include "salt/version.h"
 
 #include "util/string_util.h"

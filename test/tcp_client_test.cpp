@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "salt/tcp_client.h"
+#include "salt/core/tcp_client.h"
 
 #if 0
 TEST(tcp_client_start_argument _test, test_server_count) {
