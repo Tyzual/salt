@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include "salt/error.h"
+#include "salt/core/error.h"
 
 TEST(salt_error_test, test_error_catetory) {
   auto error_code = salt::make_error_code(salt::error_code::success);

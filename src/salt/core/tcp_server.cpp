@@ -1,9 +1,9 @@
-#include "salt/tcp_server.h"
+#include "salt/core/tcp_server.h"
 
 #include <system_error>
 
-#include "salt/log.h"
-#include "salt/tcp_connection.h"
+#include "salt/core/log.h"
+#include "salt/core/tcp_connection.h"
 
 namespace salt {
 

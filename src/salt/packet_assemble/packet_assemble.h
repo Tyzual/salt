@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "salt/connection_handle.h"
+#include "salt/core/connection_handle.h"
 
 namespace salt {
 

@@ -1,4 +1,4 @@
-#include "salt/error.h"
+#include "salt/core/error.h"
 
 namespace salt {
 

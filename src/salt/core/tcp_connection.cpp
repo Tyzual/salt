@@ -1,11 +1,11 @@
-#include "salt/tcp_connection.h"
+#include "salt/core/tcp_connection.h"
 
 #include <istream>
 #include <ostream>
 
-#include "salt/error.h"
-#include "salt/log.h"
-#include "salt/tcp_connection_handle.h"
+#include "salt/core/error.h"
+#include "salt/core/log.h"
+#include "salt/core/tcp_connection_handle.h"
 #include "salt/util/call_back_wrapper.h"
 
 namespace salt {
