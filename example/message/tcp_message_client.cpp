@@ -3,15 +3,15 @@
 #include <algorithm>
 #include <iterator>
 
-class MessageHead {
+class message_head {
 public:
   uint32_t magic_;
   uint32_t len_;
 };
 
-std::string encode_with_string(MessageHead &head, const std::string &s) {
+std::string encode_with_string(message_head &head, const std::string &s) {
   std::string result;
-  result.reserve(sizeof(MessageHead));
+  result.reserve(sizeof(message_head));
   std::copy(reinterpret_cast<char *>(&head.magic_),
             reinterpret_cast<char *>(&head.magic_) + sizeof(uint32_t),
             std::back_inserter(result));
@@ -28,9 +28,9 @@ std::string encode_with_string(MessageHead &head, const std::string &s) {
 
 int main() {
   auto packet_assemble =
-      salt::header_body_assemble<MessageHead, uint32_t, &MessageHead::len_>();
+      salt::header_body_assemble<message_head, uint32_t, &message_head::len_>();
 
-  MessageHead h;
+  message_head h;
   h.magic_ = 12345;
   auto s = encode_with_string(h, "hello");
   s += encode_with_string(h, ", world.");
