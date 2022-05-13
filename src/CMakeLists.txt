@@ -10,6 +10,7 @@ add_library(salt
             salt/core/error.h
             salt/core/log.h
             salt/packet_assemble/packet_assemble.h
+            salt/packet_assemble/header_body_assemble.h
             salt/core/shared_asio_io_context_thread.cpp
             salt/core/shared_asio_io_context_thread.h
             salt/core/tcp_connection_handle.cpp
@@ -46,6 +47,7 @@ install(FILES
             salt/core/error.h
             salt/core/log.h
             salt/packet_assemble/packet_assemble.h
+            salt/packet_assemble/header_body_assemble.h
             salt/core/shared_asio_io_context_thread.h
             salt/core/tcp_connection_handle.h
             salt/core/tcp_connection.h
