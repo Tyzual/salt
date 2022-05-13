@@ -34,6 +34,9 @@ int main() {
   h.magic_ = 12345;
   auto s = encode_with_string(h, "hello");
   s += encode_with_string(h, ", world.");
-  (&packet_assemble)->data_received(nullptr, s);
+  (&packet_assemble)->data_received(nullptr, s.substr(0, 3));
+  (&packet_assemble)->data_received(nullptr, s.substr(3, 6));
+  (&packet_assemble)->data_received(nullptr, s.substr(9, 5));
+  (&packet_assemble)->data_received(nullptr, s.substr(14));
   return 0;
 }

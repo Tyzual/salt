@@ -23,13 +23,13 @@ public:
                                  std::string s) override {
 
     uint32_t offset{0};
-    auto rest_data_length=s.size();
+    auto rest_data_length = s.size();
     while (offset < s.size()) {
       switch (current_stat_) {
       case ParseStat::kHeader: {
         if (rest_length_ > rest_data_length) {
           rest_length_ -= rest_data_length;
-          header_ += std::move(s);
+          header_ += s.substr(offset);
           return data_read_result::disconnect;
         } else if (rest_length_ == rest_data_length) {
           header_ += std::move(s);
@@ -60,24 +60,28 @@ public:
         } else if (rest_data_length == rest_length_) {
           body_ += s.substr(offset);
           // TODO 通知上游，收到新包
-          log_debug("get message body size:%llu, content:%s", body_size_, body_.c_str());
+          log_debug("get message body size:%llu, content:%s", body_size_,
+                    body_.c_str());
           current_stat_ = ParseStat::kHeader;
           rest_length_ = header_size_;
           header_.clear();
           body_.clear();
+          body_size_ = 0;
           return data_read_result::disconnect;
         } else /* if (rest_data_length > rest_length_) */ {
           rest_data_length -= rest_length_;
           body_ += s.substr(offset, rest_length_);
           offset += rest_length_;
           // TODO 通知上游，收到新包
-          log_debug("get message body size:%llu, content:%s", body_size_, body_.c_str());
+          log_debug("get message body size:%llu, content:%s", body_size_,
+                    body_.c_str());
           current_stat_ = ParseStat::kHeader;
           rest_length_ = header_size_;
           header_.clear();
           body_.clear();
+          body_size_ = 0;
         }
-      }
+      } break;
       }
     }
 
