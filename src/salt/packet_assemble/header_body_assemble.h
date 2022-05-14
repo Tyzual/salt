@@ -14,8 +14,8 @@ namespace salt {
 /**
  * @brief body长度的计算模式
  *
- * body_only          长度只包含body本身
- * with_length_field  长度包含body+长度字段
+ * body_only            长度只包含body本身
+ * with_length_field    长度包含body+长度字段
  * with_header          长度包含body+头
  */
 enum class body_length_calc_mode {
@@ -32,7 +32,7 @@ public:
 
   virtual data_read_result
   header_read_finish(std::shared_ptr<connection_handle> connection,
-                   const std::string &header) {
+                     const std::string &header) {
     return data_read_result::success;
   }
 
@@ -53,6 +53,10 @@ public:
       body_length_calc_mode::body_only};
 
   uint32_t body_length_limit_{0};
+
+  inline void set_notify(std::unique_ptr<header_body_assemble_notify> notify) {
+    notify_ = std::move(notify);
+  }
 
   data_read_result data_received(std::shared_ptr<connection_handle> connection,
                                  std::string s) override final;
@@ -81,11 +85,12 @@ private:
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename header_type, auto length_property>
-data_read_result header_body_assemble<header_type, length_property>::data_received(
+data_read_result
+header_body_assemble<header_type, length_property>::data_received(
     std::shared_ptr<connection_handle> connection, std::string s) {
 
   auto check_size = [this]<typename calc_type>() {
-    if (body_size_ <= sizeof(calc_type)) {
+    if (body_size_ < sizeof(calc_type)) {
       if (notify_) {
         notify_->packet_read_error(
             make_error_code(error_code::body_size_error));
@@ -142,6 +147,8 @@ data_read_result header_body_assemble<header_type, length_property>::data_receiv
         return data_read_result::success;
       } else if (rest_length_ == rest_data_length) {
         header_ += s.substr(offset);
+        rest_data_length -= rest_length_;
+        offset += rest_length_;
         body_size_ =
             reinterpret_cast<header_type *>(header_.data())->*length_property;
         body_size_ = byte_order::to_host(body_size_);
@@ -149,9 +156,27 @@ data_read_result header_body_assemble<header_type, length_property>::data_receiv
         if (result != data_read_result::success) {
           return result;
         }
+        if (notify_) {
+          auto result = notify_->header_read_finish(connection, header_);
+          if (result != data_read_result::success) {
+            if (notify_) {
+              notify_->packet_read_error(
+                  make_error_code(error_code::header_read_error));
+            }
+          }
+        }
         rest_length_ = body_size_;
         current_stat_ = parse_stat::body;
-        return data_read_result::success;
+
+        /**
+         * 如果body_size_为0
+         * 说明这是个空包
+         * 这里需要走一个读body的流程
+         * 将状态重置为读header
+         */
+        if (body_size_ != 0) {
+          return data_read_result::success;
+        }
       } else /* if (rest_length_ < rest_data_length) */ {
         rest_data_length -= rest_length_;
         header_ += s.substr(offset, rest_length_);
@@ -182,14 +207,17 @@ data_read_result header_body_assemble<header_type, length_property>::data_receiv
     case parse_stat::body: {
       if (rest_data_length < rest_length_) {
         body_ += s.substr(offset);
-        rest_length_ = body_size_ - rest_data_length;
+        rest_length_ -= rest_data_length;
         current_stat_ = parse_stat::body;
         return data_read_result::success;
       } else if (rest_data_length == rest_length_) {
         body_ += s.substr(offset);
-        // TODO 通知上游，收到新包
         log_debug("get message body size:%llu, content:%s", body_size_,
                   body_.c_str());
+        if (notify_) {
+          notify_->packet_reserved(connection, std::move(header_),
+                                   std::move(body_));
+        }
         current_stat_ = parse_stat::header;
         rest_length_ = header_size_;
         header_.clear();
@@ -200,9 +228,12 @@ data_read_result header_body_assemble<header_type, length_property>::data_receiv
         rest_data_length -= rest_length_;
         body_ += s.substr(offset, rest_length_);
         offset += rest_length_;
-        // TODO 通知上游，收到新包
         log_debug("get message body size:%llu, content:%s", body_size_,
                   body_.c_str());
+        if (notify_) {
+          notify_->packet_reserved(connection, std::move(header_),
+                                   std::move(body_));
+        }
         current_stat_ = parse_stat::header;
         rest_length_ = header_size_;
         header_.clear();
@@ -213,7 +244,7 @@ data_read_result header_body_assemble<header_type, length_property>::data_receiv
     }
   }
 
-  return data_read_result::disconnect;
+  return data_read_result::success;
 }
 
 } // namespace salt
