@@ -56,14 +56,14 @@ header_body_assemble<header_type, size_type, length_property>::data_received(
       if (rest_length_ > rest_data_length) {
         rest_length_ -= rest_data_length;
         header_ += s.substr(offset);
-        return data_read_result::disconnect;
+        return data_read_result::success;
       } else if (rest_length_ == rest_data_length) {
         header_ += std::move(s);
         body_size_ =
             reinterpret_cast<header_type *>(header_.data())->*length_property;
         rest_length_ = body_size_;
         current_stat_ = ParseStat::kBody;
-        return data_read_result::disconnect;
+        return data_read_result::success;
       } else /* if (rest_length_ < rest_data_length) */ {
         rest_data_length -= rest_length_;
         header_ += s.substr(offset, rest_length_);
@@ -82,7 +82,7 @@ header_body_assemble<header_type, size_type, length_property>::data_received(
         body_ += s.substr(offset);
         rest_length_ = body_size_ - rest_data_length;
         current_stat_ = ParseStat::kBody;
-        return data_read_result::disconnect;
+        return data_read_result::success;
       } else if (rest_data_length == rest_length_) {
         body_ += s.substr(offset);
         // TODO 通知上游，收到新包
@@ -93,7 +93,7 @@ header_body_assemble<header_type, size_type, length_property>::data_received(
         header_.clear();
         body_.clear();
         body_size_ = 0;
-        return data_read_result::disconnect;
+        return data_read_result::success;
       } else /* if (rest_data_length > rest_length_) */ {
         rest_data_length -= rest_length_;
         body_ += s.substr(offset, rest_length_);

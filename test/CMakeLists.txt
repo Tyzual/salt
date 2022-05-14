@@ -1,21 +1,21 @@
 add_executable(
-    tcp_client_test
-    tcp_client_test.cpp
+    header_body_assemble_test
+    header_body_assemble_test.cpp
 )
 
 target_link_libraries(
-    tcp_client_test
+    header_body_assemble_test
     salt
     gtest_main
 )
 
 target_compile_options(
-    tcp_client_test PRIVATE
+    header_body_assemble_test PRIVATE
     -fno-access-control
 )
 
 target_include_directories(
-    tcp_client_test PRIVATE
+    header_body_assemble_test PRIVATE
     "${asio_header}"
     "${PROJECT_BINARY_DIR}/src"
     "${PROJECT_SOURCE_DIR}/src"
@@ -45,5 +45,5 @@ target_include_directories(
 )
 
 include(GoogleTest)
-gtest_discover_tests(tcp_client_test)
 gtest_discover_tests(error_code_test)
+gtest_discover_tests(header_body_assemble_test)

@@ -4,7 +4,7 @@
 
 #include "salt/core/error.h"
 
-TEST(salt_error_test, test_error_catetory) {
+TEST(salt_error_test, error_catetory) {
   auto error_code = salt::make_error_code(salt::error_code::success);
   ASSERT_EQ(error_code.category(), salt::error_category());
   ASSERT_EQ(error_code.value(),
