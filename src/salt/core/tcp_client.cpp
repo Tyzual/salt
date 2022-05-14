@@ -151,19 +151,14 @@ void tcp_client::disconnect(std::string address_v4, uint16_t port) {
 }
 
 void tcp_client::_disconnect(std::string address_v4, uint16_t port) {
-  {
-    auto pos = connected_.find({address_v4, port});
-    if (pos != connected_.end()) {
-      pos->second->disconnect();
-      connected_.erase(pos);
-    }
+
+  if (auto pos = connected_.find({address_v4, port}); pos != connected_.end()) {
+    pos->second->disconnect();
+    connected_.erase(pos);
   }
 
-  {
-    auto pos = all_.find({address_v4, port});
-    if (pos != all_.end()) {
-      all_.erase(pos);
-    }
+  if (auto pos = all_.find({address_v4, port}); pos != all_.end()) {
+    all_.erase(pos);
   }
 }
 
@@ -193,8 +188,9 @@ void tcp_client::send(std::string address_v4, uint16_t port, std::string data,
 
 void tcp_client::_send(std::string address_v4, uint16_t port, std::string data,
                        std::function<void(const std::error_code &)> call_back) {
-  auto pos = connected_.find({std::move(address_v4), port});
-  if (pos == connected_.end()) {
+
+  if (auto pos = connected_.find({std::move(address_v4), port});
+      pos == connected_.end()) {
     call(call_back, make_error_code(error_code::not_connected));
   } else {
     pos->second->send(std::move(data), std::move(call_back));
@@ -224,8 +220,9 @@ void tcp_client::handle_connection_error(const std::string &remote_address,
 
   control_thread_.get_io_context().post([this, remote_address, remote_port,
                                          reconnect] {
-    auto pos = connection_metas_.find({remote_address, remote_port});
-    if (pos == connection_metas_.end()) {
+
+    if (auto pos = connection_metas_.find({remote_address, remote_port});
+        pos == connection_metas_.end()) {
       log_debug("drop connection %s:%u", remote_address.c_str(), remote_port);
       notify_dropped(remote_address, remote_port);
       return;
