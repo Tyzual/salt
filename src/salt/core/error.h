@@ -13,6 +13,8 @@ enum class error_code {
   not_connected,
   require_disconnecet,
   call_disconnect,
+  body_size_error,
+  header_read_error,
 };
 
 std::error_code make_error_code(error_code ec);

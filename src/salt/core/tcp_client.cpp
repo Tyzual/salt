@@ -252,7 +252,9 @@ void tcp_client::handle_connection_error(const std::string &remote_address,
   });
 }
 
-void tcp_client::set_notify(tcp_client_notify *notify) { notify_ = notify; }
+void tcp_client::set_notify(std::unique_ptr<tcp_client_notify> notify) {
+  notify_ = std::move(notify);
+}
 
 void tcp_client::notify_connected(const std::string &remote_addr,
                                   uint16_t remote_port) {

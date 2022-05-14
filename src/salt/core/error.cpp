@@ -37,6 +37,12 @@ std::string salt_error_category::message(int ev) const {
     return "user call "
            "tcp_client::disconnect";
   } break;
+  case error_code::body_size_error: {
+    return "body size error";
+  } break;
+  case error_code::header_read_error: {
+    return "read header error";
+  } break;
   default: {
     return "(unknown error)";
   } break;

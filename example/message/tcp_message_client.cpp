@@ -1,25 +1,29 @@
 #include "salt/packet_assemble/header_body_assemble.h"
+#include "salt/util/byte_order.h"
 
 #include <algorithm>
 #include <iterator>
 
-class message_head {
+#pragma pack(1)
+class message_header {
 public:
   uint32_t magic_;
-  uint32_t len_;
+  uint16_t len_;
 };
+#pragma pack()
 
-std::string encode_with_string(message_head &head, const std::string &s) {
+std::string encode_with_string(message_header &header, const std::string &s) {
   std::string result;
-  result.reserve(sizeof(message_head));
-  std::copy(reinterpret_cast<char *>(&head.magic_),
-            reinterpret_cast<char *>(&head.magic_) + sizeof(uint32_t),
+  result.reserve(sizeof(message_header));
+  std::copy(reinterpret_cast<char *>(&header.magic_),
+            reinterpret_cast<char *>(&header.magic_) + sizeof(header.magic_),
             std::back_inserter(result));
 
-  head.len_ = s.size();
+  header.len_ = s.size() + sizeof(header.len_);
+  header.len_ = salt::byte_order::to_network(header.len_);
 
-  std::copy(reinterpret_cast<char *>(&head.len_),
-            reinterpret_cast<char *>(&head.len_) + sizeof(uint32_t),
+  std::copy(reinterpret_cast<char *>(&header.len_),
+            reinterpret_cast<char *>(&header.len_) + sizeof(decltype(header.len_)),
             std::back_inserter(result));
 
   result += s;
@@ -28,9 +32,11 @@ std::string encode_with_string(message_head &head, const std::string &s) {
 
 int main() {
   auto packet_assemble =
-      salt::header_body_assemble<message_head, uint32_t, &message_head::len_>();
+      salt::header_body_assemble<message_header, &message_header::len_>();
+  packet_assemble.body_length_calc_mode_ =
+      salt::body_length_calc_mode::with_length_field;
 
-  message_head h;
+  message_header h;
   h.magic_ = 12345;
   auto s = encode_with_string(h, "hello");
   s += encode_with_string(h, ", world.");

@@ -62,8 +62,8 @@ int main() {
   meta.max_retry_cnt = 10;
   meta.retry_interval_s = 1;
 
-  tcp_client_notify client_notify;
-  client.set_notify(&client_notify);
+  auto client_notify = std::make_unique<tcp_client_notify>();
+  client.set_notify(std::move(client_notify));
 
   client.connect("127.0.0.1", 2002, meta);
 
