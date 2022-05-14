@@ -21,6 +21,7 @@ add_library(salt
             salt/core/tcp_client.h
             salt/util/call_back_wrapper.h
             salt/util/byte_order.h
+            ${CMAKE_CURRENT_BINARY_DIR}/salt/version.h
 )
 
 configure_file(salt/version.h.in salt/version.h)
@@ -40,20 +41,11 @@ target_include_directories(salt INTERFACE
 target_link_libraries(salt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS salt EXPORT salt DESTINATION lib)
-install(FILES
-            salt/core/asio_io_context_thread.h
-            salt/core/connection_handle.h
-            salt/core/error.h
-            salt/core/log.h
-            salt/packet_assemble/packet_assemble.h
-            salt/packet_assemble/header_body_assemble.h
-            salt/core/shared_asio_io_context_thread.h
-            salt/core/tcp_connection_handle.h
-            salt/core/tcp_connection.h
-            salt/core/tcp_server.h
-            salt/core/tcp_client.h
-            salt/util/byte_order.h
-            DESTINATION include/salt
+
+install(DIRECTORY
+    salt
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h"
 )
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/salt/version.h" DESTINATION include/salt)
