@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <type_traits>
 
@@ -15,8 +16,8 @@ namespace salt {
  * @brief body长度的计算模式
  *
  * body_only            长度只包含body本身
- * with_length_field    长度包含body+长度字段
- * with_header          长度包含body+头
+ * with_length_field    长度包含body + sizeof(长度字段)
+ * with_header          长度包含body + sizeof(包头)
  */
 enum class body_length_calc_mode {
   body_only = 1,
@@ -36,13 +37,14 @@ public:
     return data_read_result::success;
   }
 
-  virtual void packet_read_error(const std::error_code &error_code) {}
+  virtual void packet_read_error(const std::error_code &error_code,
+                                 const std::string &message) {}
 
   ~header_body_assemble_notify() = default;
 };
 
 template <typename header_type, auto length_property>
-class header_body_assemble : public base_packet_assemble {
+class header_body_assemble final : public base_packet_assemble {
 public:
   static_assert(std::is_standard_layout_v<header_type>,
                 "header is not standard layout");
@@ -92,8 +94,11 @@ header_body_assemble<header_type, length_property>::data_received(
   auto check_size = [this]<typename calc_type>() {
     if (body_size_ < sizeof(calc_type)) {
       if (notify_) {
-        notify_->packet_read_error(
-            make_error_code(error_code::body_size_error));
+        std::stringstream ss;
+        ss << "body size error. body should greater than:" << sizeof(calc_type)
+           << ", receive:" << body_size_;
+        notify_->packet_read_error(make_error_code(error_code::body_size_error),
+                                   std::move(ss).str());
       }
       log_error("body size error, receive body len:%llu, lengh type size:%zu",
                 body_size_, sizeof(calc_type));
@@ -105,6 +110,7 @@ header_body_assemble<header_type, length_property>::data_received(
   };
 
   auto calc_body_size = [&] {
+    log_debug("raw body length:%u", body_size_);
     switch (body_length_calc_mode_) {
     case body_length_calc_mode::with_length_field: {
       auto result = check_size.template operator()<size_type>();
@@ -124,8 +130,11 @@ header_body_assemble<header_type, length_property>::data_received(
 
     if (body_length_limit_ != 0 && body_size_ > body_length_limit_) {
       if (notify_) {
-        notify_->packet_read_error(
-            make_error_code(error_code::body_size_error));
+        std::stringstream ss;
+        ss << "body size:" << body_size_
+           << " exceeds limit:" << body_length_limit_;
+        notify_->packet_read_error(make_error_code(error_code::body_size_error),
+                                   std::move(ss).str());
       }
       log_error("body size:%llu exceeds limit:%u", body_size_,
                 body_length_limit_);
@@ -161,7 +170,9 @@ header_body_assemble<header_type, length_property>::data_received(
           if (result != data_read_result::success) {
             if (notify_) {
               notify_->packet_read_error(
-                  make_error_code(error_code::header_read_error));
+                  make_error_code(error_code::header_read_error),
+                  "notify return error");
+              return result;
             }
           }
         }
@@ -193,7 +204,9 @@ header_body_assemble<header_type, length_property>::data_received(
           if (result != data_read_result::success) {
             if (notify_) {
               notify_->packet_read_error(
-                  make_error_code(error_code::header_read_error));
+                  make_error_code(error_code::header_read_error),
+                  "notify return error");
+              return result;
             }
           }
         }

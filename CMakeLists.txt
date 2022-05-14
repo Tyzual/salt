@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(salt VERSION 0.1.0)
+project(salt VERSION 0.2.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -18,6 +18,8 @@ set(asio_header "${CMAKE_SOURCE_DIR}/asio/asio/include" CACHE STRING "asio heade
 message("asio header dir:${asio_header}")
 
 enable_testing()
+
+# add_definitions(-DDISABLE_LOG)
 
 add_subdirectory(src)
 add_subdirectory(example)

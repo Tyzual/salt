@@ -90,7 +90,8 @@ public:
     return salt::data_read_result::success;
   }
 
-  void packet_read_error(const std::error_code &error_code) override {
+  void packet_read_error(const std::error_code &error_code,
+                         const std::string &_) override {
     ASSERT_FALSE(true);
   }
 
@@ -273,8 +274,8 @@ TEST(salt_pack_test, empty_body_2) {
 TEST(salt_pack_test, empty_body_3) {
   message_header16 h;
   h.magic_ = 12345;
-  auto s = encode_with_string(h, "",
-                              salt::body_length_calc_mode::with_length_field);
+  auto s =
+      encode_with_string(h, "", salt::body_length_calc_mode::with_length_field);
   s +=
       encode_with_string(h, "", salt::body_length_calc_mode::with_length_field);
   for (int step = 1; step < s.size() + 1; ++step) {
@@ -303,3 +304,5 @@ TEST(salt_pack_test, empty_body_3) {
 
   ASSERT_TRUE(true);
 }
+
+// tyzual:以后再写拆包器我是狗（）

@@ -34,6 +34,7 @@ struct connection_meta {
   bool retry_forever{false};
   uint32_t max_retry_cnt{3};
   uint32_t retry_interval_s{5};
+  std::function<base_packet_assemble *(void)> assemble_creator;
 };
 
 class tcp_client {
