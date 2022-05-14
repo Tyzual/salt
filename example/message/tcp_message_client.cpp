@@ -23,24 +23,24 @@ static void send_call_back(const std::error_code &error_code) {
   }
 }
 
-class message_receiver : public salt::header_body_assemble_notify {
+class message_receiver
+    : public salt::header_body_assemble_notify<message_header> {
   salt::data_read_result
   packet_reserved(std::shared_ptr<salt::connection_handle> connection,
-                  std::string header, std::string body) override {
-    std::cout << "get message:" << body << std::endl;
+                  std::string raw_header_data, std::string body) override {
+    auto &header = to_header(raw_header_data);
+    header.magic = salt::byte_order::to_host(header.magic);
+    header.len = salt::byte_order::to_host(header.len);
+    std::cout << "get message, magic:" << std::hex << header.magic
+              << ", content length:" << std::dec << header.len
+              << " content:" << body << std::endl;
     return salt::data_read_result::success;
   }
 
   salt::data_read_result
   header_read_finish(std::shared_ptr<salt::connection_handle> connection,
-                     const std::string &header) override {
-    if (header.size() != sizeof(message_header)) {
-      std::cout << "error head size, expected:" << sizeof(message_header)
-                << ", actual:" << header.size() << std::endl;
-      return salt::data_read_result::disconnect;
-    }
-
-    auto magic = reinterpret_cast<const message_header *>(header.data())->magic;
+                     const message_header &header) override {
+    auto magic = header.magic;
     magic = salt::byte_order::to_host(magic);
     if (magic != message_magic) {
       std::cout << "magic error, expected:" << std::hex << message_magic

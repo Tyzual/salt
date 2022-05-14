@@ -15,6 +15,7 @@ enum class error_code {
   call_disconnect,
   body_size_error,
   header_read_error,
+  internel_error,
 };
 
 std::error_code make_error_code(error_code ec);

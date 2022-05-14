@@ -43,6 +43,10 @@ std::string salt_error_category::message(int ev) const {
   case error_code::header_read_error: {
     return "read header error";
   } break;
+  case error_code::internel_error: {
+    return "this is a bug, please submit an issue in "
+           "https://github.com/Tyzual/salt";
+  } break;
   default: {
     return "(unknown error)";
   } break;
