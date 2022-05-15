@@ -55,6 +55,7 @@ public:
   packet_reserved(std::shared_ptr<connection_handle> connection,
                   std::string raw_header_data, std::string body) = 0;
 
+  // TODO header参数还是改为raw_data的形式
   virtual data_read_result
   header_read_finish(std::shared_ptr<connection_handle> connection,
                      const header_type &header) {
@@ -66,6 +67,11 @@ public:
 
   inline header_type &to_header(std::string &raw_header_data) {
     return *reinterpret_cast<header_type *>(raw_header_data.data());
+  }
+
+  inline const header_type &
+  to_header(const std::string &raw_header_data) const {
+    return *reinterpret_cast<const header_type *>(raw_header_data.data());
   }
 
   ~header_body_assemble_notify() = default;

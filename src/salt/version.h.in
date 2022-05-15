@@ -2,6 +2,6 @@
 
 namespace salt {
 
-static char version[] = "@salt_VERSION_MAJOR@.@salt_VERSION_MINOR@";
+static char version[] = "@salt_VERSION_MAJOR@.@salt_VERSION_MINOR@.@salt_VERSION_PATCH@";
 
 } // namespace salt

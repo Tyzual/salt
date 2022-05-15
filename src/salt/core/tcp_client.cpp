@@ -214,13 +214,17 @@ void tcp_client::handle_connection_error(const std::string &remote_address,
         control_thread_.get_io_context(), std::chrono::seconds(wait_second));
     timer->async_wait([this, timer, remote_address = std::move(remote_address),
                        remote_port](const std::error_code &) {
-      connect(std::move(remote_address), remote_port);
+      if (auto pos = connection_metas_.find({remote_address, remote_port});
+          pos != connection_metas_.end()) {
+        connect(std::move(remote_address), remote_port, pos->second.meta_);
+      } else {
+        connect(std::move(remote_address), remote_port);
+      }
     });
   };
 
   control_thread_.get_io_context().post([this, remote_address, remote_port,
                                          reconnect] {
-
     if (auto pos = connection_metas_.find({remote_address, remote_port});
         pos == connection_metas_.end()) {
       log_debug("drop connection %s:%u", remote_address.c_str(), remote_port);

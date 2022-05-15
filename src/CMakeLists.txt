@@ -1,4 +1,25 @@
+include(FetchContent)
+
+FetchContent_Declare(asio
+                    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+                    GIT_TAG asio-1-22-1
+)
+FetchContent_MakeAvailable(asio)
+
 find_package(Threads)
+add_library(asio INTERFACE)
+target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
+target_include_directories(asio INTERFACE
+                                "$<BUILD_INTERFACE:${asio_SOURCE_DIR}/asio/include>"
+                                "$<INSTALL_INTERFACE:include>"
+)
+install(DIRECTORY "${asio_SOURCE_DIR}/asio/include/asio"
+        DESTINATION "include"
+)
+install(FILES "${asio_SOURCE_DIR}/asio/include/asio.hpp"
+        DESTINATION "include"
+)
+target_link_libraries(asio INTERFACE Threads::Threads)
 
 add_library(salt
             salt/core/asio_io_context_thread.cpp
@@ -21,14 +42,17 @@ add_library(salt
             salt/core/tcp_client.h
             salt/util/call_back_wrapper.h
             salt/util/byte_order.h
+            "${CMAKE_CURRENT_BINARY_DIR}/salt/version.h"
 )
+
+target_compile_features(salt PUBLIC cxx_std_17)
+set_target_properties(salt PROPERTIES CXX_EXTENSIONS OFF)
 
 configure_file(salt/version.h.in salt/version.h)
 
 target_include_directories(salt PRIVATE
                             "${CMAKE_CURRENT_BINARY_DIR}"
                             "${CMAKE_CURRENT_SOURCE_DIR}"
-                            "${asio_header}"
 )
 
 target_include_directories(salt INTERFACE
@@ -37,23 +61,21 @@ target_include_directories(salt INTERFACE
                             "$<INSTALL_INTERFACE:include>"
 )
 
-target_link_libraries(salt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(salt PUBLIC asio)
 
-install(TARGETS salt EXPORT salt DESTINATION lib)
-install(FILES
-            salt/core/asio_io_context_thread.h
-            salt/core/connection_handle.h
-            salt/core/error.h
-            salt/core/log.h
-            salt/packet_assemble/packet_assemble.h
-            salt/packet_assemble/header_body_assemble.h
-            salt/core/shared_asio_io_context_thread.h
-            salt/core/tcp_connection_handle.h
-            salt/core/tcp_connection.h
-            salt/core/tcp_server.h
-            salt/core/tcp_client.h
-            salt/util/byte_order.h
-            DESTINATION include/salt
+install(TARGETS salt
+    EXPORT salt
+    DESTINATION lib
+)
+
+install(TARGETS asio
+    EXPORT salt
+    DESTINATION include
+)
+
+install(DIRECTORY salt
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h"
 )
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/salt/version.h" DESTINATION include/salt)
