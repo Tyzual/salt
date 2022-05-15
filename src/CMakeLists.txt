@@ -1,4 +1,25 @@
+include(FetchContent)
+
+FetchContent_Declare(asio
+                    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+                    GIT_TAG asio-1-22-1
+)
+FetchContent_MakeAvailable(asio)
+
 find_package(Threads)
+add_library(asio INTERFACE)
+target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
+target_include_directories(asio INTERFACE
+                                "$<BUILD_INTERFACE:${asio_SOURCE_DIR}/asio/include>"
+                                "$<INSTALL_INTERFACE:include>"
+)
+install(DIRECTORY "${asio_SOURCE_DIR}/asio/include/asio"
+        DESTINATION "include/asio"
+)
+install(FILES "${asio_SOURCE_DIR}/asio/include/asio.hpp"
+        DESTINATION "include/asio"
+)
+target_link_libraries(asio INTERFACE Threads::Threads)
 
 add_library(salt
             salt/core/asio_io_context_thread.cpp
@@ -24,12 +45,14 @@ add_library(salt
             "${CMAKE_CURRENT_BINARY_DIR}/salt/version.h"
 )
 
+target_compile_features(salt PUBLIC cxx_std_17)
+set_target_properties(salt PROPERTIES CXX_EXTENSIONS OFF)
+
 configure_file(salt/version.h.in salt/version.h)
 
 target_include_directories(salt PRIVATE
                             "${CMAKE_CURRENT_BINARY_DIR}"
                             "${CMAKE_CURRENT_SOURCE_DIR}"
-                            "${ASIO_HEADER}"
 )
 
 target_include_directories(salt INTERFACE
@@ -38,12 +61,19 @@ target_include_directories(salt INTERFACE
                             "$<INSTALL_INTERFACE:include>"
 )
 
-target_link_libraries(salt PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(salt PUBLIC asio)
 
-install(TARGETS salt EXPORT salt DESTINATION lib)
+install(TARGETS salt
+    EXPORT salt
+    DESTINATION lib
+)
 
-install(DIRECTORY
-    salt
+install(TARGETS asio
+    EXPORT salt
+    DESTINATION include
+)
+
+install(DIRECTORY salt
     DESTINATION include
     FILES_MATCHING PATTERN "*.h"
 )

@@ -19,10 +19,11 @@ salt是一个基于c++ asio的网络框架，计划支持tcp的服务端和客�
 - [x] 持续集成
 - [x] cmake Config-file package
 - [ ] 文档
+- [ ] 使用string_view优化内存拷贝
 
-# 编译方式
+# 编译
 ```bash
-git clone --recursive https://github.com/Tyzual/salt.git
+git clone https://github.com/Tyzual/salt.git
 cd salt
 mkdir build && cd build
 cmake .. && make
