@@ -14,10 +14,10 @@ target_include_directories(asio INTERFACE
                                 "$<INSTALL_INTERFACE:include>"
 )
 install(DIRECTORY "${asio_SOURCE_DIR}/asio/include/asio"
-        DESTINATION "include/asio"
+        DESTINATION "include"
 )
 install(FILES "${asio_SOURCE_DIR}/asio/include/asio.hpp"
-        DESTINATION "include/asio"
+        DESTINATION "include"
 )
 target_link_libraries(asio INTERFACE Threads::Threads)
 
