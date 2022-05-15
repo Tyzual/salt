@@ -21,7 +21,7 @@ add_library(salt
             salt/core/tcp_client.h
             salt/util/call_back_wrapper.h
             salt/util/byte_order.h
-            ${CMAKE_CURRENT_BINARY_DIR}/salt/version.h
+            "${CMAKE_CURRENT_BINARY_DIR}/salt/version.h"
 )
 
 configure_file(salt/version.h.in salt/version.h)
@@ -29,7 +29,7 @@ configure_file(salt/version.h.in salt/version.h)
 target_include_directories(salt PRIVATE
                             "${CMAKE_CURRENT_BINARY_DIR}"
                             "${CMAKE_CURRENT_SOURCE_DIR}"
-                            "${asio_header}"
+                            "${ASIO_HEADER}"
 )
 
 target_include_directories(salt INTERFACE

@@ -10,7 +10,7 @@ target_link_libraries(
 
 target_include_directories(
     tcp_message_client PUBLIC
-    "${asio_header}"
+    "${ASIO_HEADER}"
     "${CMAKE_CURRENT_SOURCE_DIR}/.."
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${PROJECT_BINARY_DIR}/src"

@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.14)
-project(salt VERSION 0.2.0)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+project(salt VERSION 0.2.0
+              DESCRIPTION "a c++ network library based on asio"
+              LANGUAGES CXX)
+
+file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
+if(EXISTS "${LOC_PATH}")
+    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
+endif()
+
+
 
 include(FetchContent)
 FetchContent_Declare(
@@ -14,12 +24,12 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 option(INSTALL_GTEST "Enable installation of googletest." OFF)
 FetchContent_MakeAvailable(googletest)
 
-set(asio_header "${CMAKE_SOURCE_DIR}/asio/asio/include" CACHE STRING "asio header directory(directory that contain asio.hpp)")
-message("asio header dir:${asio_header}")
+set(ASIO_HEADER "${CMAKE_SOURCE_DIR}/asio/asio/include" CACHE FILEPATH "asio header directory(directory that contains asio.hpp)")
+message("asio header dir:${ASIO_HEADER}")
 
 enable_testing()
 
-# add_definitions(-DDISABLE_LOG)
+add_compile_definitions("$<$<CONFIG:Debug>:ENABLE_LOG>")
 
 add_subdirectory(src)
 add_subdirectory(example)
