@@ -2,23 +2,25 @@
 
 #include <system_error>
 
+#include "salt/core/error.h"
 #include "salt/core/log.h"
 #include "salt/core/tcp_connection.h"
 
 namespace salt {
 
 tcp_server::tcp_server()
-    : transfor_io_context_work_guard_(transfor_io_context_.get_executor()) {}
+    : transfer_io_context_work_guard_(transfer_io_context_.get_executor()) {}
 
 tcp_server::~tcp_server() { stop(); }
 
 void tcp_server::stop() {
   accept_thread_.stop();
-  transfor_io_context_.stop();
+  transfer_io_context_.stop();
 }
 
 bool tcp_server::init(uint16_t listen_port, uint32_t io_thread_cnt /* = 1 */) {
-  return init("", listen_port, io_thread_cnt);
+  set_listen_port(listen_port).set_transfer_thread_count(io_thread_cnt);
+  return true;
 }
 
 bool tcp_server::init(const std::string &listen_ip_v4, uint16_t listen_port,
@@ -37,21 +39,51 @@ bool tcp_server::init(const std::string &listen_ip_v4, uint16_t listen_port,
             listen_port_);
   for (uint32_t i = 0; i < io_thread_cnt; ++i) {
     io_threads_.emplace_back(
-        new shared_asio_io_context_thread(transfor_io_context_));
+        new shared_asio_io_context_thread(transfer_io_context_));
   }
   return true;
 }
 
-bool tcp_server::accept() {
+tcp_server &tcp_server::set_listen_ip_v4(const std::string &listen_ip_v4) {
+  listen_ip_ = asio::ip::make_address_v4(listen_ip_v4);
+  return *this;
+}
+
+tcp_server &tcp_server::set_listen_port(uint16_t listen_port) {
+  listen_port_ = listen_port;
+  return *this;
+}
+
+tcp_server &
+tcp_server::set_transfer_thread_count(uint32_t transfer_thread_count) {
+  if (transfer_thread_count == 0) {
+    log_info("transfer_thread_count is 0, change to 1");
+    transfer_thread_count = 1;
+  }
+
+  if (io_threads_.size() != 0) {
+    log_info("you can set transfer thread count only once, ignore this core");
+    return *this;
+  }
+
+  for (auto i = 0u; i < transfer_thread_count; ++i) {
+    io_threads_.emplace_back(
+        new shared_asio_io_context_thread(transfer_io_context_));
+  }
+
+  return *this;
+}
+
+std::error_code tcp_server::accept() {
   if (!acceptor_) {
     log_error("acceptor is nullptr");
-    return false;
+    return make_error_code(error_code::acceptor_is_nullptr);
   }
   auto connection =
-      tcp_connection::create(transfor_io_context_, assemble_creator_());
+      tcp_connection::create(transfer_io_context_, assemble_creator_());
   if (!connection) {
     log_error("create connection error");
-    return false;
+    return make_error_code(error_code::internel_error);
   }
   acceptor_->async_accept(
       connection->get_socket(),
@@ -84,13 +116,13 @@ bool tcp_server::accept() {
 
         this->accept();
       });
-  return true;
+  return make_error_code(error_code::success);
 }
 
-bool tcp_server::start() {
+std::error_code tcp_server::start() {
   if (!assemble_creator_) {
     log_error("assemble creator not set");
-    return false;
+    return make_error_code(error_code::assemble_creator_not_set);
   }
   if (!acceptor_) {
     acceptor_ = std::make_shared<asio::ip::tcp::acceptor>(
@@ -98,16 +130,17 @@ bool tcp_server::start() {
         asio::ip::tcp::endpoint(listen_ip_, listen_port_));
     return accept();
   } else {
-    log_error("tcp_serveralready started, listen:%s:%u",
+    log_error("tcp_server already started, listen:%s:%u",
               listen_ip_.to_string().c_str(), listen_port_);
-    return false;
+    return make_error_code(error_code::already_started);
   }
-  return true;
+  return make_error_code(error_code::success);
 }
 
-void tcp_server::set_assemble_creator(
+tcp_server &tcp_server::set_assemble_creator(
     std::function<base_packet_assemble *(void)> assemble_creator) {
   assemble_creator_ = assemble_creator;
+  return *this;
 }
 
 } // namespace salt

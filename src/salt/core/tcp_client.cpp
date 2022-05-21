@@ -12,11 +12,11 @@ tcp_client::~tcp_client() { stop(); }
 
 void tcp_client::stop() {
   control_thread_.stop();
-  transfor_io_context_.stop();
+  transfer_io_context_.stop();
 }
 
 tcp_client::tcp_client()
-    : transfor_io_context_work_guard_(transfor_io_context_.get_executor()),
+    : transfer_io_context_work_guard_(transfer_io_context_.get_executor()),
       resolver_(control_thread_.get_io_context()) {}
 
 void tcp_client::init(uint32_t transfer_thread_count) {
@@ -26,14 +26,15 @@ void tcp_client::init(uint32_t transfer_thread_count) {
 
   for (auto i = 0u; i < transfer_thread_count; ++i) {
     io_threads_.emplace_back(
-        new shared_asio_io_context_thread(transfor_io_context_));
+        new shared_asio_io_context_thread(transfer_io_context_));
   }
 }
 
 void tcp_client::connect(std::string address_v4, uint16_t port,
                          const connection_meta &meta) {
   if (!assemble_creator_ && !meta.assemble_creator) {
-    // TODO 通知上游连接错误
+    notify_disconnected(make_error_code(error_code::assemble_creator_not_set),
+                        address_v4, port);
     return;
   }
 
@@ -43,8 +44,7 @@ void tcp_client::connect(std::string address_v4, uint16_t port,
         if (meta_impl.meta_.retry_when_connection_error &&
             (meta_impl.meta_.retry_forever ||
              (!meta_impl.meta_.retry_forever &&
-              meta_impl.meta_.max_retry_cnt > 0)) &&
-            meta_impl.meta_.retry_interval_s > 0) {
+              meta_impl.meta_.max_retry_cnt > 0))) {
           connection_metas_[{address_v4, port}] = meta_impl;
         }
         _connect(std::move(address_v4), port);
@@ -53,7 +53,8 @@ void tcp_client::connect(std::string address_v4, uint16_t port,
 
 void tcp_client::connect(std::string address_v4, uint16_t port) {
   if (!assemble_creator_) {
-    // TODO 通知上游连接错误
+    notify_disconnected(make_error_code(error_code::assemble_creator_not_set),
+                        address_v4, port);
     return;
   }
   control_thread_.get_io_context().post(
@@ -72,18 +73,22 @@ void tcp_client::_connect(std::string address_v4, uint16_t port) {
   }
 
   if (!assemble) {
-    // TODO 通知上游连接错误
+    notify_disconnected(
+        make_error_code(error_code::assemble_create_reutrn_nullptr), address_v4,
+        port);
     return;
   }
 
   auto connection = tcp_connection::create(
-      transfor_io_context_, assemble,
+      transfer_io_context_, assemble,
       [this](const std::string &remote_addr, uint16_t port,
              const std::error_code &error_code) {
         this->handle_connection_error(remote_addr, port, error_code);
       });
 
   if (!connection) {
+    notify_disconnected(make_error_code(error_code::internel_error), address_v4,
+                        port);
     return;
   }
 
@@ -162,9 +167,30 @@ void tcp_client::_disconnect(std::string address_v4, uint16_t port) {
   }
 }
 
-void tcp_client::set_assemble_creator(
+tcp_client &
+tcp_client::set_transfer_thread_count(uint32_t transfer_thread_count) {
+  if (transfer_thread_count == 0) {
+    log_info("transfer_thread_count is 0, change to 1");
+    transfer_thread_count = 1;
+  }
+
+  if (io_threads_.size() != 0) {
+    log_info("you can set transfer thread count only once, ignore this core");
+    return *this;
+  }
+
+  for (auto i = 0u; i < transfer_thread_count; ++i) {
+    io_threads_.emplace_back(
+        new shared_asio_io_context_thread(transfer_io_context_));
+  }
+
+  return *this;
+}
+
+tcp_client &tcp_client::set_assemble_creator(
     std::function<base_packet_assemble *(void)> assemble_creator) {
   assemble_creator_ = assemble_creator;
+  return *this;
 }
 
 void tcp_client::broadcast(
@@ -267,8 +293,9 @@ void tcp_client::handle_connection_error(const std::string &remote_address,
   });
 }
 
-void tcp_client::set_notify(std::unique_ptr<tcp_client_notify> notify) {
+tcp_client &tcp_client::set_notify(std::unique_ptr<tcp_client_notify> notify) {
   notify_ = std::move(notify);
+  return *this;
 }
 
 void tcp_client::notify_connected(const std::string &remote_addr,

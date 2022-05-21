@@ -26,8 +26,8 @@ public:
 
 int main() {
   salt::tcp_server server;
-  server.set_assemble_creator([] { return new echo_packet_assemble(); });
-  server.init(2002);
+  server.set_listen_port(2002).set_assemble_creator(
+      [] { return new echo_packet_assemble(); });
   if (server.start()) {
     std::cout << "server start success, salt version:" << salt::version
               << std::endl;

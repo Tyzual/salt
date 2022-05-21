@@ -47,6 +47,15 @@ std::string salt_error_category::message(int ev) const {
     return "this is a bug, please submit an issue in "
            "https://github.com/Tyzual/salt";
   } break;
+  case error_code::assemble_create_reutrn_nullptr: {
+    return "assemble creator return nullptr";
+  } break;
+  case error_code::already_started: {
+    return "tcp server already started";
+  } break;
+  case error_code::acceptor_is_nullptr: {
+    return "acceptor is nullptr";
+  } break;
   default: {
     return "(unknown error)";
   } break;

@@ -41,7 +41,14 @@ class tcp_client {
 public:
   tcp_client();
   ~tcp_client();
-  void init(uint32_t transfer_thread_count);
+
+  tcp_client &set_transfer_thread_count(uint32_t transfer_thread_count);
+  tcp_client &set_assemble_creator(
+      std::function<base_packet_assemble *(void)> assemble_creator);
+  tcp_client &set_notify(std::unique_ptr<tcp_client_notify> notify);
+
+  [[deprecated("use set thansfer_thread_count instead")]] void
+  init(uint32_t transfer_thread_count);
 
   void connect(std::string address_v4, uint16_t port,
                const connection_meta &meta);
@@ -50,9 +57,6 @@ public:
 
   void disconnect(std::string address_v4, uint16_t port);
 
-  void set_assemble_creator(
-      std::function<base_packet_assemble *(void)> assemble_creator);
-
   void broadcast(std::string data,
                  std::function<void(const std::error_code &)> call_back);
 
@@ -60,8 +64,6 @@ public:
             std::function<void(const std::error_code &)> call_back);
 
   void stop();
-
-  void set_notify(std::unique_ptr<tcp_client_notify> notify);
 
 private:
   void _connect(std::string address_v4, uint16_t port);
@@ -108,9 +110,9 @@ private:
   std::unique_ptr<tcp_client_notify> notify_{nullptr};
 
 private:
-  asio::io_context transfor_io_context_;
+  asio::io_context transfer_io_context_;
   asio::executor_work_guard<asio::io_context::executor_type>
-      transfor_io_context_work_guard_;
+      transfer_io_context_work_guard_;
   asio_io_context_thread control_thread_;
   asio::ip::tcp::resolver resolver_;
   std::vector<std::shared_ptr<shared_asio_io_context_thread>> io_threads_;

@@ -25,6 +25,6 @@ salt是一个基于c++ asio的网络框架，计划支持tcp的服务端和客�
 ```bash
 git clone https://github.com/Tyzual/salt.git
 cd salt
-mkdir build && cd build
-cmake .. && make
+cmake -S . -B build
+cmake --build build
 ```

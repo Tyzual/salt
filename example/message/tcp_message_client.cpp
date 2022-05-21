@@ -39,9 +39,9 @@ class message_receiver
 
   salt::data_read_result
   header_read_finish(std::shared_ptr<salt::connection_handle> connection,
-                     const message_header &header) override {
-    auto magic = header.magic;
-    magic = salt::byte_order::to_host(magic);
+                     const std::string &raw_header_data) override {
+    const auto &raw_header = to_header(raw_header_data);
+    auto magic = salt::byte_order::to_host(raw_header.magic);
     if (magic != message_magic) {
       std::cout << "magic error, expected:" << std::hex << message_magic
                 << ", actual:" << std::hex << magic << std::endl;
@@ -103,8 +103,8 @@ public:
 
 int main() {
   salt::tcp_client client;
-  client.init(1);
-  client.set_notify(std::make_unique<tcp_client_notify>());
+  client.set_transfer_thread_count(1).set_notify(
+      std::make_unique<tcp_client_notify>());
 
   salt::connection_meta meta;
   meta.retry_when_connection_error = true;

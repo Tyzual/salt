@@ -55,10 +55,9 @@ public:
   packet_reserved(std::shared_ptr<connection_handle> connection,
                   std::string raw_header_data, std::string body) = 0;
 
-  // TODO header参数还是改为raw_data的形式
   virtual data_read_result
   header_read_finish(std::shared_ptr<connection_handle> connection,
-                     const header_type &header) {
+                     const std::string &raw_header_data) {
     return data_read_result::success;
   }
 
@@ -220,9 +219,7 @@ header_body_assemble<header_type, length_property>::data_received(
           return data_read_result::disconnect;
         }
         if (notify_) {
-          auto result = notify_->header_read_finish(
-              connection,
-              *reinterpret_cast<const header_type *>(header_.data()));
+          auto result = notify_->header_read_finish(connection, header_);
           if (result != data_read_result::success) {
             if (notify_) {
               notify_->packet_read_error(
@@ -268,9 +265,7 @@ header_body_assemble<header_type, length_property>::data_received(
           return data_read_result::disconnect;
         }
         if (notify_) {
-          auto result = notify_->header_read_finish(
-              connection,
-              *reinterpret_cast<const header_type *>(header_.data()));
+          auto result = notify_->header_read_finish(connection, header_);
           if (result != data_read_result::success) {
             if (notify_) {
               notify_->packet_read_error(

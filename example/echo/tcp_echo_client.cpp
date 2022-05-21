@@ -53,17 +53,16 @@ public:
 int main() {
 
   salt::tcp_client client;
-  client.init(1);
-  client.set_assemble_creator([] { return new echo_packet_assemble(); });
+
+  client.set_transfer_thread_count(2)
+      .set_assemble_creator([] { return new echo_packet_assemble(); })
+      .set_notify(std::make_unique<tcp_client_notify>());
 
   salt::connection_meta meta;
   meta.retry_when_connection_error = true;
   meta.retry_forever = true;
   meta.max_retry_cnt = 10;
-  meta.retry_interval_s = 1;
-
-  auto client_notify = std::make_unique<tcp_client_notify>();
-  client.set_notify(std::move(client_notify));
+  meta.retry_interval_s = 0;
 
   client.connect("127.0.0.1", 2002, meta);
 

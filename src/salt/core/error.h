@@ -16,6 +16,9 @@ enum class error_code {
   body_size_error,
   header_read_error,
   internel_error,
+  assemble_create_reutrn_nullptr,
+  already_started,
+  acceptor_is_nullptr,
 };
 
 std::error_code make_error_code(error_code ec);
