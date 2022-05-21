@@ -18,7 +18,7 @@ salt是一个基于c++ asio的网络框架，计划支持tcp的服务端和客�
 - [ ] 可扩展的日志接口
 - [x] 持续集成
 - [x] cmake Config-file package
-- [ ] 文档
+- [x] 文档
 - [ ] 使用string_view优化内存拷贝
 
 # 编译
