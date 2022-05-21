@@ -124,6 +124,11 @@ std::error_code tcp_server::start() {
     log_error("assemble creator not set");
     return make_error_code(error_code::assemble_creator_not_set);
   }
+
+  if (io_threads_.empty()) {
+    set_transfer_thread_count(1);
+  }
+
   if (!acceptor_) {
     acceptor_ = std::make_shared<asio::ip::tcp::acceptor>(
         accept_thread_.get_io_context(),

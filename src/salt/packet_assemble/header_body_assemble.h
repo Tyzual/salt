@@ -56,12 +56,10 @@ enum class body_length_calc_mode {
  * @brief
  * 拆完包之后的回调，用户需要继承这个类，并且实现对应的方法来获取拆完包以后的内容
  *
- * @tparam _header_type 包头类型
+ * @tparam header_type 包头类型
  */
-template <typename _header_type> class header_body_assemble_notify {
+template <typename header_type> class header_body_assemble_notify {
 public:
-  using header_type = _header_type;
-
   /**
    * @brief 解完整个包以后的回调
    *

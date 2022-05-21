@@ -84,6 +84,7 @@ bool tcp_connection::read() {
     log_error("packet assemble is nullptr");
     return false;
   }
+  log_debug("tcp socket %p start to read", this);
   auto _this{shared_from_this()};
   socket_.async_read_some(
       asio::buffer(receive_buffer_),
