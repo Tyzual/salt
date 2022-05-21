@@ -872,7 +872,8 @@ INPUT                  = mainpage.md \
                          salt/core/error.h \
                          salt/core/log.h \
                          salt/packet_assemble/packet_assemble.h \
-                         salt/packet_assemble/header_body_assemble.h
+                         salt/packet_assemble/header_body_assemble.h \
+                         salt/util/byte_order.h
 
 
 # This tag can be used to specify the character encoding of the source files

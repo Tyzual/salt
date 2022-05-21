@@ -13,6 +13,8 @@ tcp_client::~tcp_client() { stop(); }
 void tcp_client::stop() {
   control_thread_.stop();
   transfer_io_context_.stop();
+  connected_.clear();
+  all_.clear();
 }
 
 tcp_client::tcp_client()
