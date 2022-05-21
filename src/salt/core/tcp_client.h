@@ -12,6 +12,10 @@
 #include "salt/core/shared_asio_io_context_thread.h"
 #include "salt/core/tcp_connection.h"
 
+/**
+ * @brief Salt 主命名空间
+ *
+ */
 namespace salt {
 
 class tcp_client_notify {

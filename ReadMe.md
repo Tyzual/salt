@@ -28,3 +28,9 @@ cd salt
 cmake -S . -B build
 cmake --build build
 ```
+
+# 文档
+```bash
+cd src
+doxygen Doxyfile
+```
