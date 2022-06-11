@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "salt/packet_assemble/header_body_assemble.h"
+#include "salt/packet_assemble/header_body_unify_assemble.h"
 #include "salt/util/byte_order.h"
 
 class message_header32 {
@@ -87,14 +87,14 @@ std::string encode_with_string(message_header16 &header, const std::string &s,
 }
 
 template <typename header_type>
-class test_notify : public salt::header_body_assemble_notify<header_type> {
+class test_notify : public salt::header_body_unify_assemble_notify<header_type> {
 public:
   test_notify(std::vector<std::string> &token) : token_(token) {}
 
   salt::data_read_result
   packet_reserved(std::shared_ptr<salt::connection_handle> connection,
-                  std::string raw_header_data, std::string body) override {
-    token_.emplace_back(std::move(body));
+                  std::string packet) override {
+    token_.emplace_back(std::move(packet).substr(sizeof(header_type)));
     return salt::data_read_result::success;
   }
 
@@ -107,7 +107,7 @@ private:
   std::vector<std::string> &token_;
 };
 
-TEST(header_body_assemble_test, body_only) {
+TEST(salt_header_body_unify_assemble_test, body_only) {
   message_header32 h;
   h.magic_ = 12345;
   auto s =
@@ -115,7 +115,8 @@ TEST(header_body_assemble_test, body_only) {
   s += encode_with_string(h, "only", salt::body_length_calc_mode::body_only);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header32, &message_header32::len_>();
+        salt::header_body_unify_assemble<message_header32,
+                                         &message_header32::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::body_only;
     std::vector<std::string> token;
@@ -140,7 +141,7 @@ TEST(header_body_assemble_test, body_only) {
   ASSERT_TRUE(true);
 }
 
-TEST(header_body_assemble_test, with_length_field) {
+TEST(salt_header_body_unify_assemble_test, with_length_field) {
   message_header16 h;
   h.magic_ = 12345;
   auto s = encode_with_string(h, "with",
@@ -151,7 +152,7 @@ TEST(header_body_assemble_test, with_length_field) {
                           salt::body_length_calc_mode::with_length_field);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header16, &message_header16::len_>();
+        salt::header_body_unify_assemble<message_header16, &message_header16::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::with_length_field;
     std::vector<std::string> token;
@@ -177,7 +178,7 @@ TEST(header_body_assemble_test, with_length_field) {
   ASSERT_TRUE(true);
 }
 
-TEST(header_body_assemble_test, with_header) {
+TEST(salt_header_body_unify_assemble_test, with_header) {
   message_header16 h;
   h.magic_ = 12345;
   auto s =
@@ -186,7 +187,7 @@ TEST(header_body_assemble_test, with_header) {
       encode_with_string(h, "header", salt::body_length_calc_mode::with_header);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header16, &message_header16::len_>();
+        salt::header_body_unify_assemble<message_header16, &message_header16::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::with_header;
     std::vector<std::string> token;
@@ -211,7 +212,7 @@ TEST(header_body_assemble_test, with_header) {
   ASSERT_TRUE(true);
 }
 
-TEST(header_body_assemble_test, custom_length) {
+TEST(salt_header_body_unify_assemble_test, custom_length) {
   message_header32 h;
   h.magic_ = 12345;
   constexpr uint32_t custom_length = 0xbaadf00d;
@@ -221,7 +222,7 @@ TEST(header_body_assemble_test, custom_length) {
       h, "length", salt::body_length_calc_mode::custom_length, custom_length);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header32, &message_header32::len_>();
+        salt::header_body_unify_assemble<message_header32, &message_header32::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::custom_length;
     packet_assemble.reserve_body_size_ = custom_length;
@@ -247,7 +248,7 @@ TEST(header_body_assemble_test, custom_length) {
   ASSERT_TRUE(true);
 }
 
-TEST(header_body_assemble_test, empty_body) {
+TEST(salt_header_body_unify_assemble_test, empty_body) {
   message_header16 h;
   h.magic_ = 12345;
   auto s =
@@ -256,7 +257,7 @@ TEST(header_body_assemble_test, empty_body) {
                           salt::body_length_calc_mode::with_length_field);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header16, &message_header16::len_>();
+        salt::header_body_unify_assemble<message_header16, &message_header16::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::with_length_field;
     std::vector<std::string> token;
@@ -281,7 +282,7 @@ TEST(header_body_assemble_test, empty_body) {
   ASSERT_TRUE(true);
 }
 
-TEST(header_body_assemble_test, empty_body_2) {
+TEST(salt_header_body_unify_assemble_test, empty_body_2) {
   message_header16 h;
   h.magic_ = 12345;
   auto s = encode_with_string(h, "empty",
@@ -290,7 +291,7 @@ TEST(header_body_assemble_test, empty_body_2) {
       encode_with_string(h, "", salt::body_length_calc_mode::with_length_field);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header16, &message_header16::len_>();
+        salt::header_body_unify_assemble<message_header16, &message_header16::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::with_length_field;
     std::vector<std::string> token;
@@ -315,7 +316,7 @@ TEST(header_body_assemble_test, empty_body_2) {
   ASSERT_TRUE(true);
 }
 
-TEST(header_body_assemble_test, empty_body_3) {
+TEST(salt_header_body_unify_assemble_test, empty_body_3) {
   message_header16 h;
   h.magic_ = 12345;
   auto s =
@@ -324,7 +325,7 @@ TEST(header_body_assemble_test, empty_body_3) {
       encode_with_string(h, "", salt::body_length_calc_mode::with_length_field);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header16, &message_header16::len_>();
+        salt::header_body_unify_assemble<message_header16, &message_header16::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::with_length_field;
     std::vector<std::string> token;
@@ -349,7 +350,7 @@ TEST(header_body_assemble_test, empty_body_3) {
   ASSERT_TRUE(true);
 }
 
-TEST(header_body_assemble_test, empty_body_4) {
+TEST(salt_header_body_unify_assemble_test, empty_body_4) {
   message_header16 h;
   h.magic_ = 12345;
   auto s =
@@ -360,7 +361,7 @@ TEST(header_body_assemble_test, empty_body_4) {
       encode_with_string(h, "", salt::body_length_calc_mode::with_length_field);
   for (int step = 1; step < s.size() + 1; ++step) {
     auto packet_assemble =
-        salt::header_body_assemble<message_header16, &message_header16::len_>();
+        salt::header_body_unify_assemble<message_header16, &message_header16::len_>();
     packet_assemble.body_length_calc_mode_ =
         salt::body_length_calc_mode::with_length_field;
     std::vector<std::string> token;

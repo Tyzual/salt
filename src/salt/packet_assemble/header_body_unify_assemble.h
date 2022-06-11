@@ -19,31 +19,30 @@ namespace salt {
  *
  * @tparam header_type 包头类型
  */
-template <typename header_type> class header_body_assemble_notify {
+template <typename header_type> class header_body_unify_assemble_notify {
 public:
   /**
    * @brief 解完整个包以后的回调
    *
    * @param connection 收到包的链接，可以使用这个参数发回包
-   * @param raw_header_data 包头部原始数据
-   * @param body 包内容原始数据
+   * @param raw_packet 包的原始数据
    * @return data_read_result 处理包的结果
    */
   virtual data_read_result
   packet_reserved(std::shared_ptr<connection_handle> connection,
-                  std::string raw_header_data, std::string body) = 0;
+                  std::string raw_packet) = 0;
 
   /**
    * @brief 仅解析完头部以后的回调。
    *        如果有需要可以 override 这个接口来验证头部是否合法
    *
    * @param connection 收到包的链接，可以使用这个参数发回包
-   * @param raw_header_data 头部的原始数据
+   * @param raw_data 头部的原始数据，数据长度可能长于头部
    * @return data_read_result 处理包头的结果
    */
   virtual data_read_result
   header_read_finish(std::shared_ptr<connection_handle> connection,
-                     const std::string &raw_header_data) {
+                     const std::string &raw_data) {
     return data_read_result::success;
   }
 
@@ -61,31 +60,31 @@ public:
    * @brief 将原始包头数据转换成包头的结构。
    *        转换完成以后，包头中各个数据的字节序仍然是网络字节序
    *
-   * @param raw_header_data 包头原始数据
+   * @param raw_packet_data 包原始数据
    * @return header_type& 包头的数据结构
    */
-  inline header_type &to_header(std::string &raw_header_data) {
-    return *reinterpret_cast<header_type *>(raw_header_data.data());
+  inline header_type &to_header(std::string &raw_packet_data) {
+    return *reinterpret_cast<header_type *>(raw_packet_data.data());
   }
 
   /**
    * @brief 将原始包头数据转换成包头的结构。
    *        转换完成以后，包头中各个数据的字节序仍然是网络字节序
    *
-   * @param raw_header_data 包头原始数据
+   * @param raw_packet_data 包原始数据
    * @return header_type& 包头的数据结构
    */
   inline const header_type &
-  to_header(const std::string &raw_header_data) const {
-    return *reinterpret_cast<const header_type *>(raw_header_data.data());
+  to_header(const std::string &raw_packet_data) const {
+    return *reinterpret_cast<const header_type *>(raw_packet_data.data());
   }
 
-  virtual ~header_body_assemble_notify() = default;
+  virtual ~header_body_unify_assemble_notify() = default;
 };
 
 /**
  * @brief 基于包头和包内容的拆包器
- *        使用方法可以查看example/message/tcp_message_client.cpp
+ *        使用方法可以查看example/message/tcp_message_unify_client.cpp
  *
  * @tparam header_type 包头的类型，包头需要满足两条件 1.包头为
  * POD； 2.包头各成员之间无 padding。虽然 salt
@@ -94,7 +93,7 @@ public:
  * @tparam length_property 包头中表示包内容长度的字段
  */
 template <typename header_type, auto length_property>
-class header_body_assemble final : public base_packet_assemble {
+class header_body_unify_assemble final : public base_packet_assemble {
 public:
   static_assert(std::is_standard_layout_v<header_type>,
                 "header is not standard layout");
@@ -129,7 +128,7 @@ public:
    * @param notify 拆包完成后的回调
    */
   inline void
-  set_notify(std::unique_ptr<header_body_assemble_notify<header_type>> notify) {
+  set_notify(std::unique_ptr<header_body_unify_assemble_notify<header_type>> notify) {
     notify_ = std::move(notify);
   }
 
@@ -143,11 +142,10 @@ public:
   data_read_result data_received(std::shared_ptr<connection_handle> connection,
                                  std::string s) override final;
 
-  ~header_body_assemble() = default;
+  ~header_body_unify_assemble() = default;
 
 private:
-  std::string header_;
-  std::string body_;
+  std::string packet_;
   static constexpr uint32_t header_size_ = sizeof(header_type);
   using size_type = decltype(std::declval<header_type>().*length_property);
   size_type body_size_{0};
@@ -159,7 +157,7 @@ private:
 
   parse_stat current_stat_{parse_stat::header};
   uint32_t rest_length_{header_size_};
-  std::unique_ptr<header_body_assemble_notify<header_type>> notify_{nullptr};
+  std::unique_ptr<header_body_unify_assemble_notify<header_type>> notify_{nullptr};
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +166,7 @@ private:
 
 template <typename header_type, auto length_property>
 data_read_result
-header_body_assemble<header_type, length_property>::data_received(
+header_body_unify_assemble<header_type, length_property>::data_received(
     std::shared_ptr<connection_handle> connection, std::string s) {
 
   auto check_size = [this](uint32_t reserve_size) {
@@ -237,21 +235,21 @@ header_body_assemble<header_type, length_property>::data_received(
     case parse_stat::header: {
       if (rest_length_ > rest_data_length) {
         rest_length_ -= rest_data_length;
-        header_ += s.substr(offset);
+        packet_ += s.substr(offset);
         current_stat_ = parse_stat::header;
         return data_read_result::success;
       } else if (rest_length_ == rest_data_length) {
-        header_ += s.substr(offset);
+        packet_ += s.substr(offset);
         rest_data_length -= rest_length_;
         offset += rest_length_;
         body_size_ =
-            reinterpret_cast<header_type *>(header_.data())->*length_property;
+            reinterpret_cast<header_type *>(packet_.data())->*length_property;
         body_size_ = byte_order::to_host(body_size_);
         auto result = calc_body_size();
         if (result != data_read_result::success) {
           return result;
         }
-        if (header_.size() != sizeof(header_type)) {
+        if (packet_.size() != sizeof(header_type)) {
           if (notify_) {
             notify_->packet_read_error(
                 make_error_code(error_code::internel_error),
@@ -260,11 +258,11 @@ header_body_assemble<header_type, length_property>::data_received(
                         error_code::internel_error)));
           }
           log_error("read header error, header size %zu, expected:%u",
-                    sizeof(header_type), header_.size());
+                    sizeof(header_type), packet_.size());
           return data_read_result::disconnect;
         }
         if (notify_) {
-          auto result = notify_->header_read_finish(connection, header_);
+          auto result = notify_->header_read_finish(connection, packet_);
           if (result != data_read_result::success) {
             if (notify_) {
               notify_->packet_read_error(
@@ -289,16 +287,16 @@ header_body_assemble<header_type, length_property>::data_received(
         }
       } else /* if (rest_length_ < rest_data_length) */ {
         rest_data_length -= rest_length_;
-        header_ += s.substr(offset, rest_length_);
+        packet_ += s.substr(offset, rest_length_);
         offset += rest_length_;
         body_size_ =
-            reinterpret_cast<header_type *>(header_.data())->*length_property;
+            reinterpret_cast<header_type *>(packet_.data())->*length_property;
         body_size_ = byte_order::to_host(body_size_);
         auto result = calc_body_size();
         if (result != data_read_result::success) {
           return result;
         }
-        if (header_.size() != sizeof(header_type)) {
+        if (packet_.size() != sizeof(header_type)) {
           if (notify_) {
             notify_->packet_read_error(
                 make_error_code(error_code::internel_error),
@@ -307,11 +305,11 @@ header_body_assemble<header_type, length_property>::data_received(
                         error_code::internel_error)));
           }
           log_error("read header error, header size %zu, expected:%u",
-                    sizeof(header_type), header_.size());
+                    sizeof(header_type), packet_.size());
           return data_read_result::disconnect;
         }
         if (notify_) {
-          auto result = notify_->header_read_finish(connection, header_);
+          auto result = notify_->header_read_finish(connection, packet_);
           if (result != data_read_result::success) {
             if (notify_) {
               notify_->packet_read_error(
@@ -321,8 +319,7 @@ header_body_assemble<header_type, length_property>::data_received(
             }
           }
         }
-        body_.clear();
-        body_.reserve(body_size_);
+        packet_.reserve(body_size_ + header_size_);
         rest_length_ = body_size_;
         current_stat_ = parse_stat::body;
       }
@@ -330,38 +327,32 @@ header_body_assemble<header_type, length_property>::data_received(
       [[fallthrough]];
     case parse_stat::body: {
       if (rest_data_length < rest_length_) {
-        body_ += s.substr(offset);
+        packet_ += s.substr(offset);
         rest_length_ -= rest_data_length;
         current_stat_ = parse_stat::body;
         return data_read_result::success;
       } else if (rest_data_length == rest_length_) {
-        body_ += s.substr(offset);
-        log_debug("get message body size:%llu, content:%s", body_size_,
-                  body_.c_str());
+        packet_ += s.substr(offset);
+        log_debug("get packet size:%llu", packet_.size());
         if (notify_) {
-          notify_->packet_reserved(connection, std::move(header_),
-                                   std::move(body_));
+          notify_->packet_reserved(connection, std::move(packet_));
         }
         current_stat_ = parse_stat::header;
         rest_length_ = header_size_;
-        header_.clear();
-        body_.clear();
+        packet_.clear();
         body_size_ = 0;
         return data_read_result::success;
       } else /* if (rest_data_length > rest_length_) */ {
         rest_data_length -= rest_length_;
-        body_ += s.substr(offset, rest_length_);
+        packet_ += s.substr(offset, rest_length_);
         offset += rest_length_;
-        log_debug("get message body size:%llu, content:%s", body_size_,
-                  body_.c_str());
+        log_debug("get packet size:%llu", packet_.size());
         if (notify_) {
-          notify_->packet_reserved(connection, std::move(header_),
-                                   std::move(body_));
+          notify_->packet_reserved(connection, std::move(packet_));
         }
         current_stat_ = parse_stat::header;
         rest_length_ = header_size_;
-        header_.clear();
-        body_.clear();
+        packet_.clear();
         body_size_ = 0;
       }
     } break;
