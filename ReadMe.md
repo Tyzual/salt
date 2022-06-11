@@ -27,10 +27,5 @@ git clone https://github.com/Tyzual/salt.git
 cd salt
 cmake -S . -B build
 cmake --build build
-```
-
-# 文档
-```bash
-cd src
-doxygen Doxyfile
+# 文档在 build/doc 中
 ```

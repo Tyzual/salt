@@ -30,6 +30,7 @@ add_library(salt
             salt/core/log.h
             salt/packet_assemble/packet_assemble.h
             salt/packet_assemble/header_body_assemble.h
+            salt/packet_assemble/header_body_unify_assemble.h
             salt/core/shared_asio_io_context_thread.cpp
             salt/core/shared_asio_io_context_thread.h
             salt/core/tcp_connection_handle.cpp
@@ -108,3 +109,16 @@ install(FILES
 export(EXPORT salt
     FILE "${CMAKE_CURRENT_BINARY_DIR}/salt.cmake"
 )
+
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_IN "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in")
+    set(DOXYGEN_OUT "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
+    configure_file("${DOXYGEN_IN}" "${DOXYGEN_OUT}" @ONLY)
+    add_custom_target(doc ALL
+        COMMAND "${DOXYGEN_EXECUTABLE}" "${DOXYGEN_OUT}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
+else(DOXYGEN_FOUND)
+    message("doxygen not installed, skip generate document")
+endif(DOXYGEN_FOUND)
