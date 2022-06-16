@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(salt VERSION 0.2.0
+project(salt VERSION 0.3.0
               DESCRIPTION "a c++ network library based on asio"
               LANGUAGES CXX)
 
