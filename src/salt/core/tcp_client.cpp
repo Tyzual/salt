@@ -97,12 +97,18 @@ void tcp_client::_connect(std::string address_v4, uint16_t port) {
   connection->set_remote_address(address_v4);
   connection->set_remote_port(port);
   all_[{address_v4, port}] = connection;
+  std::error_code err_code;
+  asio::ip::tcp::endpoint endpoint{
+      asio::ip::address::from_string(address_v4, err_code), port};
+  if (err_code) {
+    connection->handle_fail_connection(err_code);
+    return;
+  }
   resolver_.async_resolve(
-      address_v4, std::to_string(port),
-      [this, connection = std::move(connection),
-       address_v4 = std::move(address_v4),
-       port](const std::error_code &err_code,
-             asio::ip::tcp::resolver::results_type result) {
+      endpoint, [this, connection = std::move(connection),
+                 address_v4 = std::move(address_v4),
+                 port](const std::error_code &err_code,
+                       asio::ip::tcp::resolver::results_type result) {
         if (err_code) {
           connection->handle_fail_connection(err_code);
           return;

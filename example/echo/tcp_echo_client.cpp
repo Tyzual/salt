@@ -36,7 +36,6 @@ public:
  */
 class tcp_client_notify : public salt::tcp_client_notify {
 public:
-
   // 成功链接
   void connection_connected(const std::string &remote_addr,
                             uint16_t remote_port) override {
@@ -61,12 +60,10 @@ public:
   }
 };
 
-
 /**
  * tcp 客户端的示例
  */
 int main() {
-
 
   // 创建客户端，设置拆包器工厂以及监听对象
   salt::tcp_client client;
@@ -82,8 +79,9 @@ int main() {
   meta.retry_interval_s = 0;
 
   // 链接服务器
-  client.connect("127.0.0.1", 2002, meta);
-
+  const std::string server = "127.0.0.1";
+  const uint16_t port = 2002;
+  client.connect(server, port, meta);
 
   // 读取用户输入，发送消息
   // 输入 \quit 退出客户端
@@ -110,11 +108,11 @@ int main() {
     if (broadcast) {
       client.broadcast(line, send_call_back);
     } else {
-      client.send("127.0.0.1", 2002, line, send_call_back);
+      client.send(server, port, line, send_call_back);
     }
   }
 
-  client.disconnect("127.0.0.1", 2002);
+  client.disconnect(server, port);
 
   return 0;
 }
