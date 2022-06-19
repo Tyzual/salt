@@ -155,7 +155,7 @@ public:
   /**
    * @brief 连接到服务器，链接断开时不自动重连
    *
-   * @param address_v4 服务器 ip 地址
+   * @param address_v4 服务器 ip 地址(或者域名)
    * @param port 服务器端口
    */
   void connect(std::string address_v4, uint16_t port);
@@ -163,7 +163,7 @@ public:
   /**
    * @brief 断开链接
    *
-   * @param address_v4 服务器 ip 地址
+   * @param address_v4 服务器 ip 地址(或者域名)，需要与connect时传入的一致
    * @param port 服务器端口
    */
   void disconnect(std::string address_v4, uint16_t port);
