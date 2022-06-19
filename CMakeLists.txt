@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(salt VERSION 0.3.0
-              DESCRIPTION "a c++ network library based on asio"
-              LANGUAGES CXX)
+project(salt VERSION 0.3.1
+  DESCRIPTION "a c++ network library based on asio"
+  LANGUAGES CXX)
 
 file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
+
 if(EXISTS "${LOC_PATH}")
-    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
+  message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
 endif()
 
 include(FetchContent)
@@ -14,6 +15,7 @@ FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/e2239ee6043f73722e7aa812a459f54a28552929.zip
 )
+
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 option(INSTALL_GTEST "Enable installation of googletest." OFF)

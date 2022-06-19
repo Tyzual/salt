@@ -191,9 +191,9 @@ int main() {
     assemble->set_notify(std::make_unique<message_receiver>());
 
     // 设置最大包限制，如果包内容长度超过这个限制，则断开链接。
-    // 这里为了演示设置了只能发5个byte
+    // 这里为了演示设置了只能发15个byte
     // 设置为0则不限制
-    assemble->body_length_limit_ = 0;
+    assemble->body_length_limit_ = 15;
     return assemble;
   };
 
